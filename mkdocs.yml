@@ -1,0 +1,161 @@
+site_name: My Docs
+site_url: https://example.com/ # Change this to your site URL
+dev_addr: 'localhost:8000'
+nav:
+  - git/index.md
+  - OS:
+    - os/linux.md
+    - os/disk.md
+  - Networking:
+    - networking/index.md
+    - DNS: networking/dns.md
+    # - LoadBalancer: networking/loadbalancer.md
+    - Proxy: networking/proxy.md
+
+  - Languages:
+    - OOP: languages/oop.md
+    - java:
+      - languages/java/threads.md
+
+  - "Build Automation":
+    - automation/build/gradle.md
+
+  - Backend:
+    - Database:
+      - SQL: backend/databases/sql.md
+    - Flask: 
+      - backend/flask/index.md
+    - SpringBoot: 
+      - Intro: backend/springboot/index.md
+      - Model: backend/springboot/model.md
+      - Repository: backend/springboot/repository.md
+      - Controller: backend/springboot/controller.md
+      - Security: backend/springboot/security.md
+  - Frontend:
+    - "HTML, CSS, TS": frontend/index.md
+    - frontend/javascript.md
+    - Angular: 
+      - frontend/angular/index.md
+    - React: 
+      - frontend/react/index.md
+
+  - Security:
+    - security/OAuth/index.md
+    - security/tokens.md
+    - security/certs.md
+    - security/crypto.md
+
+  - Artifactory: artifactory/index.md
+  - LDAP: ldap/index.md
+
+  - ZooKeeper: zookeeper/index.md
+  - Kafka:
+    - kafka/index.md
+    - kafka/config.md
+    - kafka/cli.md
+
+  - Nginx:
+    - nginx/index.md
+  - AWS: aws/index.md
+  - Kubernetes:
+    - k8/index.md
+    - k8/docker.md
+    - Services: k8/services.md
+
+markdown_extensions:
+  - abbr
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.critic:
+      mode: view
+  - pymdownx.caret
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.keys
+  - pymdownx.smartsymbols
+  - attr_list
+  - md_in_html
+  - admonition
+  - pymdownx.details
+  - pymdownx.betterem
+  - pymdownx.tasklist:
+      custom_checkbox: true
+      clickable_checkbox: true
+  # - fontawesome_markdown: !!python/object:fontawesome_markdown.FontAwesomeExtension
+  - pymdownx.highlight:
+      anchor_linenums: true
+      use_pygments: true
+      line_spans: __span
+      pygments_lang_class: true
+      # auto_title: true
+      # linenums: true
+      # anchor_linenums: true
+      # linenums_style: pymdownx-inline
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - include-markdown
+  - glightbox:
+      touchNavigation: true
+      loop: false
+      effect: zoom
+      slide_effect: slide
+      width: 100%
+      height: auto
+      zoomable: true
+      draggable: true
+      skip_classes:
+        - custom-skip-class-name
+      auto_caption: false
+      caption_position: bottom
+      background: white
+      shadow: true
+      manual: false
+
+theme:
+  name: material
+  icon:
+    annotation: material/plus-circle # material/arrow-right-circle 
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  features:
+    - navigation.sections
+    - navigation.top
+    # - navigation.instant
+    # - navigation.tabs
+    # - navigation.tabs.sticky
+    - navigation.expand
+    # - navigation.indexes
+    # - navigation.tabs.floating
+    - navigation.back_to_top
+    - content.code.annotate
+    - content.code.select
+    - content.tabs.link
+    # - content.code.copy
