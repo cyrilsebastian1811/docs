@@ -2,12 +2,12 @@
 
 ## Key features
 
-- **JSX**: A syntax extension that allows writing HTML in JavaScript.
-- **Components**: Reusable and independent building blocks of the UI.
-- **Virtual DOM**: A lightweight representation of the real DOM that improves performance by updating only the changed parts.
-- **One-Way Data Binding**: Data flows in one direction, making the application more predictable.
-- **State and Props**: Enables dynamic and interactive UIs.
-- **Lifecycle Methods**: Methods like componentDidMount or useEffect that run during specific phases of a component's lifecycle.
+- __JSX__: A syntax extension that allows writing HTML in JavaScript.
+- __Components__: Reusable and independent building blocks of the UI.
+- __Virtual DOM__: A lightweight representation of the real DOM that improves performance by updating only the changed parts.
+- __One-Way Data Binding__: Data flows in one direction, making the application more predictable.
+- __State and Props__: Enables dynamic and interactive UIs.
+- __Lifecycle Methods__: Methods like componentDidMount or useEffect that run during specific phases of a component's lifecycle.
 
 ??? note "Virtual DOM"
 
@@ -96,13 +96,13 @@
 
 1) Controlled vs. Uncontrolled Components
 
-   - **Controlled**: Components where the state is managed by React using useState or similar.
-   - **Uncontrolled**: Components where the state is managed by the DOM itself.
+   - __Controlled__: Components where the state is managed by React using useState or similar.
+   - __Uncontrolled__: Components where the state is managed by the DOM itself.
 
 2) Stateful vs. Stateless Components
 
-   - **Stateful**: Components that manage their own state.
-   - **Stateless**: Components that do not manage their own state (purely presentational).
+   - __Stateful__: Components that manage their own state.
+   - __Stateless__: Components that do not manage their own state (purely presentational).
 
 ## Styling
 
@@ -173,8 +173,8 @@ function Example() {
 
 ## Events
 
-- All HTML elements used in React are a wrapper on standard HTML elements. Thus, we must use component properties instead of HTML attributes(e.g use className="" instead of class="").
-- React events use camelCase (e.g., onClick, onChange) and accept a function reference — not a string like in plain HTML.
+- All HTML elements used in React are a wrapper on standard HTML elements. Thus, we must use component properties instead of HTML attributes(e.g use `className=""` instead of `class=""`).
+- React events use camelCase (e.g., `onClick`, `onChange`) and accept a function reference — not a string like in plain HTML.
 
 | Event Name | Trigger | Element Type |
 | --- | --- | --- |
@@ -342,7 +342,12 @@ const Parent = () => {
 
 ## Component Lifecycles
 
-React components go through different lifecycle phases during their existence. These phases are particularly relevant for class components but can also be mapped to functional components using hooks like useEffect.
+React components go through different lifecycle phases during their existence. These phases are particularly relevant for class components but can also be mapped to functional components using hooks like `useEffect`.
+
+<figure markdown="span">
+  ![Component Lifecycle](./img/component-lifescycle.png){ width="600" }
+  <figcaption>Component Lifecycle</figcaption>
+</figure>
 
 === "Class Components"
 
@@ -365,9 +370,9 @@ React components go through different lifecycle phases during their existence. T
             - Allows the component to update its state based on props.
 
             ```jsx
-            static getDerivedStateFromProps(props, state) {
-              if (props.initialCount !== state.counter) {
-                return { counter: props.initialCount };
+            static getDerivedStateFromProps(nextProps, prevState) {
+              if (nextProps.initialCount !== prevState.prevState.internalCount) {
+                return { internalCount: nextProps.initialCount };
               }
               return null;
             }
@@ -384,7 +389,7 @@ React components go through different lifecycle phases during their existence. T
             ```
 
         ??? info "`#!jsx componentDidMount()`"
-            - Invoked after the component is mounted in the DOM.
+            - Invoked after the component is mounted to the DOM.
             - Ideal for side effects like API calls, subscriptions, or setting up event listeners.
 
             ```jsx
@@ -513,7 +518,7 @@ React components go through different lifecycle phases during their existence. T
     ??? danger "On every render"
 
         - Be careful not to change the state in this case.
-        - Changing state cause re-rendering, so on and so forth. Thus entering a loop.
+        - Changing state causes re-rendering, which inturn triggers rendering.
 
         ```jsx
         useEffect(() => {
@@ -553,12 +558,26 @@ React components go through different lifecycle phases during their existence. T
 
     ??? info "Unmounting Phase"
 
+        - Before every re-run and on unmount
+
         ```jsx
         useEffect(() => {
           return () => {
             console.log('Component will unmount');
           };
         }, []);
+
+        // or
+
+        useEffect(() => {
+          console.log(user.profile.name);
+
+          // Cleanup runs: logs 'Component will unmount' (for old 'Alice')
+          // Then effect re-runs: logs 'Bob'
+          return () => {
+            console.log('Component will unmount');
+          };
+        }, [user.profile.name]);
         ```
 
 
@@ -566,51 +585,47 @@ React components go through different lifecycle phases during their existence. T
 
 They let you use state and other React features without writing a class(i.e functional components)
 
-### State Hook
-
-```jsx
-const Example = () => {
-  // Declare a new state variable, which we'll call "count"
-  const [count, setCount] = useState(0);
-
-  return (
-    <div>
-      <p>You clicked {count} times</p>
-      <button onClick={() => setCount(count + 1)}>
-        Click me
-      </button>
-    </div>
-  );
-}
-```
+### `useState`
 
 - `useState` returns a pair, the current state value and a function that lets you update it.
-- Similar to `this.setState` in a class, except it doesn’t merge the old and new state together.
-- Hence, if current state depends on previous state.
 
-```jsx 
-function Example() {
+??? warning
+
+    - Similar to `this.setState` in a class, except it doesn’t merge the old and new state together. Hence, if current state depends on previous state.
+    - React doesn't update states instantaneously, but schedule's them.
+    - Thus, if currentState depends on previous state. It may get stale data for previous state.
+
+    ```jsx
+    // Not recommended
+    // This approach may return stale data as react schedule's state updates
+    setUserInput({
+        ...userInput,
+        lastName: 'test'
+    });
+    ```
+
+```jsx hl_lines="12-21"
+const Example = () => {
+    // Declare a new state variable
     const [userInput, setUserInput] = useState({
         title: '',
         firstName: '',
         lastName: ''
     });
+    
+    const [hasUpdate, setHasUpdate] = useState(false);
 
     handleClick = () => {
-        // 1. Not recommended
-        setUserInput({
-            ...userInput,
-            lastName: 'test'
-        });
-
-        // 2. Recommended
-        // The 1st approach may return stale data as react schedule's state updates
+        // If current state is dependent on previous state
         setUserInput((prevState) => {
             return {
                 ...prevState,
                 lastName: 'test'
             };
-        })
+        });
+
+        // If current state is independent of previous state
+        setHasUpdate(false);
     };
 
     return (
@@ -624,35 +639,71 @@ function Example() {
 }
 ```
 
-### Ref's Hook
+### `useRef`
 
-- Used to reference a HTML tag
-- Suitable, to read input values from forms once(on submission). Rather than monitoring every e event.
+- To access DOM elements by referencing a HTML tag.
+- Suitable, to read input values from forms once during submission. Rather than monitoring every `<input />` keystroke.
+- Store mutable values that persist across renders without causing re-renders
 
-```jsx
-import React, { useRef } from 'react';
-const Example = () => {
-  const nameInputRef = useRef();
+??? note "Accesing DOM elements"
 
-  handleClick = () => {
-    // The node element can be found in the current property
-    console.log(nameInputRef.current.value);
-  }
+    ```jsx
+    import React, { useRef } from 'react';
+    const Example = () => {
+      const nameInputRef = useRef();
 
-  return (
-    <div>
-      <input type="text" ref={nameInputRef} />
-      <button onClick={handleClick}></button>
-    </div>
-  );
-}
-```
+      handleClick = () => {
+        // The node element can be found in the current property
+        console.log(nameInputRef.current.value);
+      }
 
-### Effects hook
+      return (
+        <div>
+          <input type="text" ref={nameInputRef} />
+          <button onClick={handleClick}></button>
+        </div>
+      );
+    }
+    ```
 
-- It serves the same purpose as componentDidMount, componentDidUpdate, and componentWillUnmount in React classes, but unified into a single API. ex:  `useEffect(() => {...}, [dependencies])}`
+??? note "Persisting values across renders"
 
-- It runs after every component evaluation,, if the specified dependencies changes
+    ```jsx hl_lines="1-2 5-8 12"
+    const PreviousStateExample = () => {
+      const intervalRef = useRef();
+      const expensiveValue = useRef(calculateOnce());
+
+      useEffect(() => {
+        // intervalId = setInterval({}); ❌ Won’t work as expected
+        // intervalId is re-declared every time the component function runs.
+        // Thus intervalId is not persisted. Causing memory leaks
+        intervalRef.current = setInterval(() => {
+          console.log('Tick');
+        }, 1000);
+
+        return () => clearInterval(intervalRef.current);
+      }, []);
+
+      return (
+        <div>
+          <p>Value: {expensiveValue.current}</p>;
+          <p>Current: {count}</p>
+          <p>Previous: {prevCount.current}</p>
+          <button onClick={() => setCount(count + 1)}>Increment</button>
+        </div>
+      );
+    }
+
+    function calculateOnce() {
+      console.log("Heavy calculation...");
+      return 42;
+    }
+    ```
+
+### `useEffect`
+
+- It serves the same purpose as `componentDidMount`, `componentDidUpdate`, and `componentWillUnmount` in React classes, but unified into a single API. ex:  `useEffect(() => {...}, [dependencies])}`
+- It runs after every component evaluation,, if the specified dependencies changes.
 
 ```jsx
 import { useEffect, useState } from 'react';
@@ -674,20 +725,100 @@ const MyComponent = (props) => {
   }, [timerIsActive, timerDuration]);
 };
 
-# Runs every time component renders
+// Runs every time component renders
 useEffect(() => {});
 
-# Runs only once, right after component mounts
+// Runs only once, right after component mounts
 useEffect(() => {}, []);
 
-# Runs whenever dependency changes
+// Runs whenever dependency changes
 useEffect(() => {}, [...dependencies]);
 ```
 
-<figure markdown="span">
-  ![Component Lifecycle](./img/component-lifescycle.png){ width="600" }
-  <figcaption>Class-based Component Lifecycle</figcaption>
-</figure>
+??? warning "Why useMemo and useCallback?"
+
+    In React: Functions and objects are recreated on every render.
+    
+    - This can cause unwanted re-renders in child components or expensive recalculations
+    - `useMemo` and `useCallback` help memoize values/functions so they only change when needed.
+
+### `useMemo`
+
+- Caches the result of a calculation until dependencies change.
+- Memoize Expensive Values
+
+```jsx hl_lines="5"
+import { useMemo, useState } from 'react';
+
+// 🔥 Without useMemo, React would recalculate on every render, even if n hasn't changed.
+const Fibonacci = ({ n }) => {
+  const fib = useMemo(() => {
+    console.log("Calculating Fibonacci...");
+    const calc = (n) => (n <= 1 ? n : calc(n - 1) + calc(n - 2));
+    return calc(n);
+  }, [n]);
+
+  return (<div>Fibonacci({n}) = {fib}</div>);
+}
+```
+
+### `useCallback`
+
+- Caches the function definition so it doesn’t get recreated on every render.
+
+```jsx hl_lines="8 15"
+import { useState, useCallback } from 'react';
+
+const Parent = () => {
+  const [count, setCount] = useState(0);
+
+  // 🔥 Without useCallback: handleClick is a new function every render
+  // Child will re-render even if props didn’t change
+  const handleClick = useCallback(() => {
+    console.log("Clicked");
+  }, []);
+
+  return (
+    <div>
+      <button onClick={() => setCount(count + 1)}>Re-render</button>
+      <Child onClick={handleClick} />
+    </div>
+  );
+}
+
+const Child = ({ onClick }) => {
+  return <button onClick={onClick}>Child Button</button>;
+}
+```
+
+??? warning "`React.memo`"
+
+    - `React.memo` is a higher-order component that tells React: Only re-render this component if its `props` have changed
+    - It memoizes the result of the render — like caching — and skips rendering if props are the same as last time.
+
+    ```jsx hl_lines="10"
+    const Parent = ({ count }) => {
+      const [text, setText] = useState("");
+
+      return (
+        <div>
+          <input onChange={(e) => setText(e.target.value)} />
+          <Child count={count} />
+        </div>
+      );
+    }
+
+    // Re-renders everytime parent renders regardless of whether props changes or not
+    // const Child = ({ count }) => {
+    //   console.log("Child rendered");
+    //   return <div>Count: {count}</div>;
+    // }
+
+    const Child = React.memo(function Child({ count }) {
+      console.log("Child rendered");
+      return <div>Count: {count}</div>;
+    });
+    ```
 
 
 ## Fragment
@@ -708,222 +839,91 @@ function Example() {
 ```
 
 
+## Higher-Order Component (HOC)
+
+- A Higher-Order Component is a function that takes a component and returns a new component with additional functionality.
+- Classic use case: conditional rendering of components based on authentication and authorizaton.
+
+```jsx
+// withAuthProtection.js
+const withAuthProtection = (WrappedComponent) => {
+  return function ProtectedComponent(props) {
+    // ...
+    if (!isLoggedIn) {
+      return <p>Access denied. Please log in.</p>;
+    }
+
+    return <WrappedComponent {...props} />;
+  };
+}
+
+// Dashboard.js
+const Dashboard = () => {
+  return <h2>Welcome to the dashboard!</h2>;
+}
+
+// App.js
+const ProtectedDashboard = withAuthProtection(Dashboard);
+
+const App = () => {
+  // ...
+  return (
+    <div>
+      <h1>🔐 React withAuthProtection HOC Demo</h1>
+      <ProtectedDashboard />
+    </div>
+  );
+}
+```
+
+
 ## Portal
 
-- A portal provides a way to render children into a DOM node that exists outside the DOM hierarchy of the parent component.
+- In React, components render inside a parent DOM node. But sometimes you want to:
+  - Render content outside that DOM tree
+  - Avoid CSS overflow, z-index, or stacking issues
+  - Create modal-like UIs that aren't clipped or constrained
 
-```jsx
-function Modal({ isOpen, onClose, children }) {
-    if (!isOpen) return null;
-
-    // Create a portal to render modal content outside the parent component
-    return ReactDOM.createPortal(
-        <div style={modalStyles}>
-            <div style={overlayStyles}>
-                <div style={contentStyles}>
-                    {children}
-                    <button onClick={onClose}>Close</button>
-                </div>
-            </div>
-        </div>,
-        document.getElementById('portal-root') // Mount modal content in a DOM node outside the root
-    );
-}
-
-function App() {
-    const [isModalOpen, setModalOpen] = React.useState(false);
-
-    return (
-        <div>
-            <h1>React Portal Example</h1>
-            <button onClick={() => setModalOpen(true)}>Open Modal</button>
-            <Modal isOpen={isModalOpen} onClose={() => setModalOpen(false)}>
-                <h2>Modal Content</h2>
-                <p>This content is rendered outside the main DOM tree using a portal.</p>
-            </Modal>
-        </div>
-    );
+```jsx title="index.html"
+<body>
+  <div id="root"></div>
+  <div id="modal-root"></div> <!-- 👈 Outside root hierarchy -->
+</body>
+```
+```jsx title="Modal.js"
+// Create a portal to render modal content outside the parent component
+const Modal = ({ children, onClose }) => {
+  return ReactDOM.createPortal(
+    <div style={styles.overlay} onClick={onClose}>
+      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>,
+    document.getElementById('modal-root') // 👈 renders outside app
+  );
 }
 ```
-
-
-## Redux
-
-Provides application wide immutable store. Best used for maintaining app level state, similar to context
-
-```jsx
-import { createStore, combineReducers } from 'redux';
-
-const counterReducer = (state = { counter: 0, showCounter: true }, action) => {
-  switch (action.type) {
-    case "INCREMENT": return {
-      counter: state.counter + 1,
-      showCounter
-    }
-    case "DECREMENT": return {
-      counter: state.counter - 1,
-      showCounter
-    }
-    case "INCREASE": return {
-      counter: (state.counter + action.amt), showCounter
-    }
-    case "TOGGLE": return {
-      counter: state.counter,
-      showCounter: !state.showCounter
-    }
-  }
-  return state;
-}
-
-const store = createStore(combineReducers({
-  counter: counterReducer
-}))
-
-// REDUX IIMPLEMENTATION
-// Subscribing to a state
-const counterSubscriber = () => {
-  const state = store.getState();
-  console.log(state);
-}
-
-store.subscribe(counterSubscriber);
-
-store.dispatch({ type: "INCREMENT" })
-
-
-// REACT-REDUX IIMPLEMENTATION
-import { Provider, useSelector, useDispatch } from 'react-redux';
-
-// Add provider, such that all nested components has access to the store
-// Hence generally added to App(Root) component
-<Provider store={store}>
-  <App />
-</Provider>
-
-const Counter = () => {
-  // get's and subscribe's to the state
-  const counter = useSelector(state => state.counter);
-  const showCounter = useSelector(state => state.showCounter);
-  const dispatch = useDispatch();
-
-  const incrementHandler = () => {
-    dispatch({ type: "INCREMENT" });
-  }
-
-  const increaseHandler = () => {
-    dispatch({ type: "INCREASE", amt: 5 });
-  }
-
-  const decrementHandler = () => {
-    dispatch({ type: "DECREMENT" });
-  }
-
-  const toggleHandler = () => {
-    dispatch({ type: "TOGGLE" });
-  }
+```jsx title="App.js"
+const App = () => {
+  const [showModal, setShowModal] = useState(false);
 
   return (
     <div>
-      Counter
-      {showCounter && <span>{counter}</span>}
-      <button onClick={incrementHandler}>Increment</button>
-      <button onClick={increaseHandler}>Increase by 5</button>
-      <button onClick={decrementHandler}>Decrement</button>
-      <button onClick={toggleHandler}>Toggle Counter</button>
+      <h1>Main App</h1>
+      <button onClick={() => setShowModal(true)}>Open Modal</button>
+
+      {showModal && (
+        <Modal onClose={() => setShowModal(false)}>
+          <h2>This is a Portal Modal</h2>
+          <button onClick={() => setShowModal(false)}>Close</button>
+        </Modal>
+      )}
     </div>
   );
 }
-
-export default Counter;
 ```
 
-### Limitations of react-redux
 
-- Could lead to misspell or use of wrong action identifiers when working on a project with multiple actions and multiple developer contribution. Could be avoided by spelling action identifiers correctly
-- Since states are immutable. We return a cloned state with the necessary updates, and as the state get complex so does the reducer. This could lead to unmanageable code
-- No modularization of reducers
-
-!!! note
-
-    redux/toolkit is another library that address the above mentioned short comings of react-redux
-
-```jsx
-import { createSlice, configureStore } from '@reduxjs/toolkit';
-
-const counterSlice = createSlice({
-  name: 'counter',
-  initialState: { counter: 0, showCounter: true },
-  reducers: {
-    increment(state) {
-      // possible becuase Immer package automatically intercepts this
-      // and return a cloned verions of the state with the below update
-      state.counter++;
-    },
-    decrement() {
-      state.counter--;
-    },
-    increase(state, action) {
-      state.counter = state.counter + action.amt;
-    },
-    toggle(state) {
-      state.showCounter = !state.showCounter;
-    }
-  }
-})
-
-const store = configureStore({
-  reducer: {
-    // counterReducer key -> counter
-    counter: counterSlice.reducer
-  }
-})
-
-import { Provider, useSelector, useDispatch } from 'react-redux';
-
-// Add provider, such that all nested components has access to the store
-// hence generally added to App(Root) component
-<Provider store={store}>
-  <App />
-</Provider>
-
-const Counter = () => {
-  // get's and subscribe to the state
-  // state.<store_reducer_key>.<properties>
-  const counter = useSelector(state => state.counter.counter);
-  const showCounter = useSelector(state => state.counter.showCounter);
-  const dispatch = useDispatch();
-
-  const incrementHandler = () => {
-    dispatch(counterSlice.actions.increment());
-  }
-
-  const increaseHandler = () => {
-    dispatch(counterSlice.actions.increase({ amt: 5 })); // {type: SOME_UNIQUE_IDENTIFIER, amt: 5}
-    // dispatch(counterSlice.actions.increase(5)); // defaults {type: SOME_UNIQUE_IDENTIFIER, payload: 5}
-  }
-
-  const decrementHandler = () => {
-    dispatch(counterSlice.actions.decrement());
-  }
-
-  const toggleHandler = () => {
-    dispatch(counterSlice.actions.toggle());
-  }
-
-  return (
-    <div>
-      Counter
-      {showCounter && <span>{counter}</span>}
-      <button onClick={incrementHandler}>Increment</button>
-      <button onClick={increaseHandler}>Increase by 5</button>
-      <button onClick={decrementHandler}>Decrement</button>
-      <button onClick={toggleHandler}>Toggle Counter</button>
-    </div>
-  );
-}
-
-export default Counter;
-```
 
 ## Routing
 
@@ -1072,3 +1072,304 @@ history.replace("/quotes"); {/* history is lost. i.e can't navigate back to curr
 const navigate = useNavigate();
 navigate("/quotes", { replace: true });
 ```
+
+
+## App-wide State Management
+
+- 2 options: Context or Redux.
+- ==Both states live in memory only.==
+- For persistent state use either Context/Redux with localStorage/sessionStorage/Cookies.
+
+| Source         | Survives Page Reload?       | Notes                      |
+| -------------- | --------------------------- | -------------------------- |
+| React Context  | ❌ No                        | Lives in memory only       |
+| Redux Store    | ❌ No                        | Lives in memory only       |
+| localStorage   | ✅ Yes                       | Persistent across sessions |
+| sessionStorage | ✅ Yes (until tab is closed) | Clears on tab close        |
+| Cookies        | ✅ Yes (configurable)        | Good for tokens/auth       |
+
+### Context
+
+- Context provides a way to pass data through the component tree without passing props manually at every level.
+- Use it only for global/shared state, not all component state.
+- On any change, all consumers re-render.
+- Manual Async logic.
+- Great for:
+    - Theme toggles
+    - Auth status
+    - Language settings
+    - User object
+
+```jsx
+import { createContext, useState } from "react";
+
+const AuthContext = createContext({
+  user: null
+});
+
+const AuthContextProvidor = (props) => {
+
+  const [user, setUser] =  useState(null);
+
+  const addUser = () => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) setUser(JSON.parse(storedUser));
+  }
+
+  const removeUser = () => {
+    localStorage.removeItem('user');
+    setUser(null);
+  }
+
+  const context = {
+    user: user,
+    addUser: addUser,
+    removeUser: removeUser
+  };
+
+  // When the value prop of the provider changes
+  // React will re-render all consumers of that context
+  return (
+    <AuthContext.Provider value={context}>
+      {props.children}
+    </AuthContext.Provider>
+  );
+}
+
+const App = () => {
+  const [theme, setTheme] = useState('light');
+
+  return (
+    <AuthContextProvidor>
+      <Toolbar />
+    </AuthContextProvidor>
+  );
+}
+
+const Toolbar = () => {
+  const userContext = useContext(AuthContext);
+  // Logic
+  return (
+    <div>
+      {userContext.user && <span>{userContext.user}</span>}
+      <button onClick={userContext.addUser}>Login</button>
+      <button onClick={userContext.removeUser}>Logout</button>
+    </div>
+  );
+}
+```
+
+
+### Redux
+
+- External state management library.
+- Provides application wide immutable store.
+
+=== "`redux` Implementation"
+
+    - ==Vanilla Redux (Non-React)==: Use this library without react.
+
+    ```jsx title="reducers/counterReducer.js"
+    //                     (initialState, action)
+    const counterReducer = (state = { counter: 0, showCounter: true }, action) => {
+      switch (action.type) {
+        // Return a cloned verions of the state
+        case "INCREASE": return {
+          counter: (state.counter + action.amt), showCounter
+        }
+        case "TOGGLE": return {
+          counter: state.counter,
+          showCounter: !state.showCounter
+        }
+      }
+      return state;
+    }
+
+    export default counterReducer;
+    ```
+    ```jsx title="store.js"
+    import { createStore, combineReducers } from 'redux';
+    import counterReducer from './reducers/counterReducer';
+
+    const rootReducer = combineReducers({
+      counter: counterReducer
+    });
+
+    const store = createStore(rootReducer);
+
+    export default store;
+    ```
+    ```jsx title="example"
+    // Subscribing to a state
+    store.subscribe(() => {
+      const state = store.getState();
+      console.log(state);
+    });
+
+    store.dispatch({ type: "INCREMENT" });
+    ```
+
+=== "`react-redux` Implementation"
+
+    ```jsx title="reducers/counterReducer.js"
+    //                     (initialState, action)
+    const counterReducer = (state = { counter: 0, showCounter: true }, action) => {
+      switch (action.type) {
+        // Return a cloned verions of the state
+        case "INCREASE": return {
+          counter: (state.counter + action.amt), showCounter
+        }
+        case "TOGGLE": return {
+          counter: state.counter,
+          showCounter: !state.showCounter
+        }
+      }
+      return state;
+    }
+
+    export default counterReducer;
+    ```
+    ```jsx title="store.js"
+    import { createStore, combineReducers } from 'redux';
+    import counterReducer from './reducers/counterReducer';
+
+    const rootReducer = combineReducers({
+      counter: counterReducer
+    });
+
+    const store = createStore(rootReducer);
+
+    export default store;
+    ```
+    ```jsx title="index.js"
+    import { Provider } from 'react-redux';
+    import store from './store'; // 👈 your created store
+
+    // Add provider, such that all nested components has access to the store
+    // Hence generally added to App(Root) component
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(
+      <Provider store={store}>
+        <App />
+      </Provider>
+    );
+    ```
+
+    ```jsx title="Counter.js"
+    import { Provider, useSelector, useDispatch } from 'react-redux';
+
+    const Counter = () => {
+      // get's and subscribe's to the state
+      const counter = useSelector(state => state.counter);
+      const showCounter = useSelector(state => state.showCounter);
+      const dispatch = useDispatch();
+
+      const increaseHandler = () => {
+        dispatch({ type: "INCREASE", amt: 5 });
+      }
+
+      const toggleHandler = () => {
+        dispatch({ type: "TOGGLE" });
+      }
+
+      return (
+        <div>
+          Counter
+          {showCounter && <span>{counter}</span>}
+          <button onClick={increaseHandler}>Increase by 5</button>
+          <button onClick={toggleHandler}>Toggle Counter</button>
+        </div>
+      );
+    }
+
+    export default Counter;
+    ```
+
+    !!! warning "Limitations of `react-redux`"
+
+        - Could lead to misspelled or use of wrong action identifiers when working on a project with multiple actions and multiple developer contribution. Could be avoided by spelling action identifiers correctly
+        - Since states are immutable. We return a cloned state with the necessary updates, and as the state get complex so does the reducer. This could lead to unmanageable code
+        - No modularization of reducers
+
+
+=== "`redux/toolkit` Implementaion"
+
+    - Another library that address the above mentioned short comings of `react-redux`
+
+    ```jsx title="counterSlice.js" hl_lines="8-9"
+    import { createSlice, configureStore } from '@reduxjs/toolkit';
+
+    const counterSlice = createSlice({
+      name: 'counter',
+      initialState: { counter: 0, showCounter: true },
+      reducers: {
+        increase(state, action) {
+          // redux/toolkit comes with Immer. which intercepts this
+          // and clones the state for us
+          state.counter = state.counter + action.payload;
+        },
+        toggle(state) {
+          state.showCounter = !state.showCounter;
+        }
+      }
+    });
+    export const counterActions = counterSlice.actions; // ✅ named export for actions
+    export default counterSlice.reducer;                // ✅ default export reducer
+    ```
+    ```jsx title="store.js"
+    import { configureStore } from '@reduxjs/toolkit';
+    import counterReducer from './store/counterSlice'; // 👈 correct import path and reducer
+
+    const store = configureStore({
+      reducer: {
+        // counterReducer key -> counter
+        counter: counterReducer
+      }
+    });
+
+    export default store;
+    ```
+    ```jsx title="index.js" hl_lines="4-5"
+    import { Provider } from 'react-redux';
+    import store from './store'; // 👈 your created store
+
+    // Including Provider at the top of component hierarchy
+    // ensure all componets can subscribe to the state
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(
+      <Provider store={store}>
+        <App />
+      </Provider>
+    );
+    ```
+    ```jsx title="Counter.js" hl_lines="5-6 12 16"
+    import { useSelector, useDispatch } from 'react-redux';
+    import { counterActions } from './store/counterSlice'; // 👈 import actions
+
+    const Counter = () => {
+      // Get's and Subscribe's to the required state
+      // state.<store_reducer_key>.<properties>
+      const counter = useSelector(state => state.counter.counter);
+      const showCounter = useSelector(state => state.counter.showCounter);
+      const dispatch = useDispatch();
+
+      const increaseHandler = () => {
+        dispatch(counterActions.increase(5));
+      }
+
+      const toggleHandler = () => {
+        dispatch(counterActions.toggle());
+      }
+
+      return (
+        <div>
+          Counter
+          {showCounter && <span>{counter}</span>}
+          <button onClick={increaseHandler}>Increase by 5</button>
+          <button onClick={toggleHandler}>Toggle Counter</button>
+        </div>
+      );
+    }
+
+    export default Counter;
+    ```

@@ -32,7 +32,8 @@ nav:
       - Controller: backend/springboot/controller.md
       - Security: backend/springboot/security.md
   - Frontend:
-    - "HTML, CSS, TS": frontend/index.md
+    # - "HTML, CSS, TS": 
+    - frontend/index.md
     - frontend/javascript.md
     - Angular: 
       - frontend/angular/index.md

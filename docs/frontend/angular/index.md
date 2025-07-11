@@ -1,4 +1,4 @@
-# __:material-react: Angular__
+# __:material-angular: Angular__
 
 ## Setup
 
