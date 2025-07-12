@@ -43,8 +43,8 @@ public class UserDTO {
 }
 ```
 
-- Controller Layer – Uses DTO for API Response
-- Service Layer – Converts Between DTO & Entity
+- Controller Layer – Receives DTOs as API request and sends DTOs as API response.
+- Service Layer – Converts DTO to Entity, and vice-versa.
 
 __Validation Annotations__:
 
@@ -77,7 +77,7 @@ This represents the Database model and forms an Object-to-Relational Mapping(ORM
         @Index(name="idx_purchase_date_time", columnList = "purchaseDate, purchaseTime")
     }
 )
-// Ensure retailer_name values length > 0 and is either alphanumeric, space, -, &
+// Ensure retailer_name.length > 0 and is either alphanumeric, space, -, &
 // Pattern enforcement on database side.
 @Check(constraints = "CHAR_LENGTH(retailer_name) > 0 AND retailer_name NOT REGEXP '[^a-zA-Z0-9 \\-&]'")
 public class Receipt {
@@ -91,7 +91,7 @@ public class Receipt {
     @NotNull(message = "Retailer is required")
     // Pattern validation on application side
     @Pattern(regexp = "^[\\w\\s\\-&]+$", message = "Retailer name must contain only alphanumeric characters, spaces, hyphens, or ampersands")
-    @Column(name="retailer", length = 255)
+    @Column(name="retailerName", length = 255)
     private String retailer;
 
     // Null check on application side
@@ -121,7 +121,7 @@ __Annotations__:
 - `@Column`: If column name not specified, defaults to lowercase and snake_case attribute name.
 - `@Patern`, `@NotNull`: are validations performed on Java side.
 - `@Column(updatable, nullable, length)` options are contrains enforced on database side
-- `@Table(uniqueConstraints)`, `@Check` enforced on databaseside.
+- `@Table(uniqueConstraints)`, `@Check` enforced on database side.
 - `@GeneratedValue`: To auto generate IDs. ID Generation strategies:
 
     | Strategy | Description |
@@ -134,7 +134,7 @@ __Annotations__:
 
 !!! warning
 
-    - JPA makes use of class and attribute names and not table and column names. Thus, make use class and attribute names for database operations.
+    - JPA makes use of class and attribute names and not table and column names. Thus, make use od class and attribute names for database operations.
 
 ??? info "`@GeneratedValue` v/s `@UuidGenerator`"
 
@@ -145,7 +145,7 @@ __Annotations__:
         - Works with databases that support UUID types (e.g., PostgreSQL, MySQL 8+).
         - Does not allow custom UUID strategies (e.g., UUID v1, v7, etc.).
     - `@UuidGenerator`:
-        - More flexible than GenerationType.UUID.
+        - More flexible than `GenerationType.UUID`.
         - Supports different UUID types (RANDOM, TIME, AUTO). e.g. `@UuidGenerator(style = UuidGenerator.Style.TIME)`
 
 ---
@@ -295,7 +295,6 @@ __Types__:
     @Repository
     public class InstructorDao {
         ...
-        @Transactional
         public void save(Instructor instructor) {
             // Will save InstructorDetail as well. Due to CascadeType.ALL
             entityManager.persist(Instructor);
@@ -304,6 +303,7 @@ __Types__:
 
     public class TestService {
         ...
+        @Transactional
         public void createInstructor() {
             Instructor instructor = new Instructor("A", "B", "a@b.com");
 
@@ -322,9 +322,10 @@ __Types__:
     public class InstructorDetail {
         ...
 
-        // mappedBy refers to instructorDetail  property in the Instructor class
-        // Uses the infromation from the Instructor class @JoinColumn to find associated instructorDetail for instructor
-        // This where KEY `FK_DETAIL_idx` (`instructor_detail_id`) helps. By, querying on instructor_detail_id on instructor table
+        // mappedBy refers to instructorDetail property of Instructor.class
+        // Uses Instructor.class(@JoinColumn.name) to find associated instructorDetail for given instructor
+        // The index `FK_DETAIL_idx` (`instructor_detail_id`) helps.
+        // allows querying by instructor_detail_id on instructor table
         @OneToOne(mappedBy="instructorDetail", cascade=CascadeType.ALL)
         private Instructor instructor;
     }
@@ -453,10 +454,8 @@ __Types__:
                 return query.getResultList();
             }
 
-            @Transactional
             public void update(Course course) { entityManager.merge(course); } 
 
-            @Transactional
             public void deleteById(int id) {
                 Course course = entityManager.find(Course.class, id);
                 entityManager.remove(course);
@@ -465,7 +464,6 @@ __Types__:
 
         @Repository
         public class InstructorDao {
-            @Transactional
             public void save(Instructor theInstructor) {
                 entityManager.persist(theInstructor);
             }
@@ -475,26 +473,27 @@ __Types__:
             }
 
             public Instructor findInstructorByIdJoinFetch(int Id) {
+                TypedQuery<Instructor> query = entityManager.createQuery("SELECT i FROM Instructor i JOIN FETCH i.courses WHERE i.id=:instructorId", Instructor.class);
+
+                // To perform joins on instructor, course, instructor_detail in one query
                 // (1)!
                 // This performs 2 seperate joins
                 // 1. join on instructor and courses
                 // 2. join on instructor and instructor detail
-                TypedQuery<Course> query = entityManager.createQuery("SELECT i FROM Instructor i JOIN FETCH i.courses WHERE i.id=:instructorId", Instructor.class);
-
-                // To perform joins on instructor, course, instructor_detail in one query
-                // TypedQuery<Course> query = entityManager.createQuery("SELECT i FROM Instructor i JOIN FETCH i.courses JOIN FETCH i.instructorDetail WHERE i.id=:instructorId", Instructor.class);
+                TypedQuery<Instructor> query = entityManager.createQuery("SELECT i FROM Instructor i JOIN FETCH i.courses JOIN FETCH i.instructorDetail WHERE i.id=:instructorId", Instructor.class);
 
                 query.setParameter("instructorId", Id);
                 return query.getResultList();
             }
 
-            @Transactional
             public void update(Instructor instructor) { entityManager.merge(instructor); } 
 
-            @Transactional
+            // @Transactional
             public void deleteById(int id) {
                 Instructor instructor = entityManager.find(Instructor.class, id);
-                // Here instructor.getCourses() even with LAZY loading as this is within @Transactional scope
+                // Here, instructor.getCourses() works even with LAZY loading
+                // As this would have been within @Transactional scope
+                // But, @Transactional is moved to service side. But this still works
                 List<Courses> courses = instructor.getCourses();
 
                 for(Course course: courses) { course.setInstructor(null); }
@@ -506,6 +505,7 @@ __Types__:
 
         public class TestService {
             ...
+            @Transactional
             public void createInstructorWithCourses() {
                 Instructor instructor = new Instructor("A", "B", "a@b.com");
                 instructor.addCourse(new Course("Math"));
@@ -524,6 +524,7 @@ __Types__:
                 System.out.println("Courses: " + instructor.getCourses());
             }
 
+            @Transactional
             public void findCoursesByInstructorId() {
                 Instructor instructor = instructorDao.findInstructorById(1);
                 List<Course> courses = courseDao.findCoursesByInstructorId(1);
@@ -533,20 +534,24 @@ __Types__:
                 System.out.println("Courses: " + instructor.getCourses());
             }
 
+            @Transactional
             public void updateInstructor() {
                 Instructor instructor = instructorDao.findInstructorById(1);
                 instructor.setLastName("TESTER");
                 instructorDao.update(instructor);
             }
 
+            @Transactional
             public void updateCourse() {
                 Course course = courseDao.findCourseById(1);
                 courseDao.setTitle("Testing course");
                 courseDao.update(course);
             }
 
+            @Transactional
             public void deleteInstructor() { instructorDao.deleteById(1); }
 
+            @Transactional
             public void deleteCourse() { courseDao.deleteById(1); }
         }
         ```
@@ -608,7 +613,6 @@ __Types__:
         @Repository
         public class CourseDao {
             ...
-            @Transactional
             public void save(Course course) {
                 // This will save the course and associated reviews. due to CascasdeType.ALL
                 return entityManager.persist(Course.class, id);
@@ -620,7 +624,6 @@ __Types__:
                 return query.getResultList();
             }
 
-            @Transactional
             public void deleteById(int Id) {
                 // This will delete the course and associated reviews. due to CascasdeType.ALL
                 Course course = entityManager.find(Course.class, id);
@@ -630,6 +633,7 @@ __Types__:
 
         public class TestService {
             ...
+            @Transactional
             public void createCourseAndReviews() {
                 Course course = new Course("TEsting courese");
                 course.addReview(new Review("Best course ever"));
@@ -642,6 +646,7 @@ __Types__:
                 System.out.println("Course review: " + course.getReviews());
             }
 
+            @Transactional
             public void deleteCourseAndReviews() {
                 courseDao.deleteById(1);
             }
@@ -655,7 +660,7 @@ __Types__:
 
     - Every many-to-many associations has 2 sides. The owning side and the inverse / non-owning side.
     - If the association is Bi-directional
-        - Either side may be designated as the owning side.
+        - Either side may be designated as the owning side. Owning side must use `@JoinTable`
         - ==The non-owning side must use the __mappedBy__ element of the ManyToMany annotation. To specify the relationship field or property of the owning side.==
 
     ```sql title="Schema"
@@ -664,8 +669,9 @@ __Types__:
         `course_id` INT NOT NULL,
         `student_id` INT NOT NULL,
         PRIMARY KEY (`course_id`, `student_id`),
+        KEY `FK_COURSE_idx` (`course_id`),
         KEY `FK_STUDENT_idx` (`student_id`),
-        CONSTRAINT `FK_COURSE_05` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+        CONSTRAINT `FK_COURSE` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
         CONSTRAINT `FK_STUDENT` FOREIGN KEY (`student_id`) REFERENCES `student` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
     ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -702,6 +708,8 @@ __Types__:
 
             // Utility method to maintain bidirectional relationship
             public void addStudent(Student student) {
+                // Avoid duplicate utility updates
+                if (students.contains(student)) return;
                 students.add(student);
                 student.getCourses().add(this);
             }
@@ -733,8 +741,10 @@ __Types__:
 
             // Utility method to maintain bidirectional relationship
             public void addCourse(Course course) {
+                // Avoid duplicate utility updates
+                if (courses.contains(course)) return;
                 courses.add(course);
-                course.addStudent(this);
+                course.getStudents().add(this);
             }
         }
 
@@ -746,13 +756,13 @@ __Types__:
                 return query.getResultList();
             }
 
-            @Transactional
             public void deleteById(int Id) {
                 Course course = entityManager.find(Course.class, 1);
                 // Remove this course from all students' course lists
                 for(Student student: course.getStudents()) { student.getCourses().remove(course); }
 
                 // Clear the students list from the course to avoid foreign key issues
+                // required to update owning side (Course)
                 course.getStudents().clear();
 
                 entityManager.remove(course);
@@ -767,20 +777,20 @@ __Types__:
                 return query.getResultList();
             }
 
-            @Transactional
             public void update(Student student) {
                 entityManager.merge(student);
             }
 
-            @Transactional
             // Remove associations
             public void deleteById(int Id) {
                 Student student = entityManager.find(Student.class, 1);
 
                 // Remove student from all courses before deletion
+                // ✅ modify owning side
                 for(Student course: student.getCourses()) { course.getStudents().remove(student); }
 
                 // Clear student's course list to avoid constraint issues
+                // ✅ optional, to sync inverse side in Java 
                 student.getCourses().clear();
 
                 entityManager.remove(student);
@@ -788,6 +798,7 @@ __Types__:
         }
 
         public class TestService {
+            @Transactional
             public void createCourseAndStudents() {
                 Course course = new Course("Math");
                 Student student1 = new Student("John", "Doe", "j.d@gmail.com");
@@ -798,6 +809,7 @@ __Types__:
                 courseDao.save(course);
             }
 
+            @Transactional
             public void addCoursesToStudent() {
                 Student student = studentDao.findById(1);
                 student.addCourse(new Course("History"));
@@ -817,10 +829,12 @@ __Types__:
                 System.out.println("Courses: " + student.getCourses());
             }
 
+            @Transactional
             public void deleteCourse() {
                 courseDao.deleteById(1);
             }
 
+            @Transactional
             public void deleteStudent() {
                 studentDao.deleteById(1);
             }
@@ -847,7 +861,9 @@ __Types__:
             - Allows Duplicates: You must manually ensure uniqueness (Hibernate does not enforce it).
             - Slower Performance for Large Datasets: Checking for duplicates requires extra queries or processing.
 
-??? info `@OnDelete`
+<hr/>
+
+??? info "`@OnDelete`"
 
     Consider a one-to-many relationship between User and Post where deleting a User should delete all associated Post records. Hibernate will execute separate delete queries for each related Post, which can cause performance issues.
 

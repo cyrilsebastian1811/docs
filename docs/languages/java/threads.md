@@ -1,5 +1,4 @@
-# __:material-language-java: Multi-Threading__
-
+# __Multithreading__
 
 ## Monitor Lock and Object Synchronization
 
@@ -85,12 +84,12 @@ To ensure proper operation, synchronization is required so that:
     - If multiple threads are waiting, only one thread is notified randomly.
     - The awakened thread will continue execution only after the notifying thread releases the lock.
     - `#!java notify()` does not immediately release the lock.
-    - Other threads cannot acquire the lock until the current thread finishes execution of the synchronized block/method.
+    - Other threads cannot acquire the lock until the current thread finishes execution of the synchronized block/method or enters waiting state.
 
 === "`#!java notifyAll()`"
 
     - Wakes up all threads waiting on the object's monitor.
-    - However, only one thread will acquire the lock (as only one thread can own the monitor at a time), and others will keep waiting.
+    - However, only one thread will acquire the lock (as only one thread acquires monitor lock at a time), and others will keep waiting.
 
 === "`#!java yield()`"
 
@@ -107,7 +106,7 @@ To ensure proper operation, synchronization is required so that:
 === "`#!java sleep()`"
 
     - Puts the current thread into a timed waiting state for a specified number of milliseconds or nanoseconds.
-    - Does not release locks held by the thread.
+    - ==Does not release locks held by the thread.==
     - After the sleep duration, the thread moves to the Runnable state and waits for CPU time.
 
 
@@ -182,7 +181,7 @@ public class ProducerConsumer {
 
     - __Spurious wakeups happen__: Threads waiting on wait() can sometimes wake up without being notified, due to OS-level behavior.
     - __Race conditions on shared state__: When multiple threads are waiting or notifying, the condition may have changed by the time a thread wakes up.
-    - __if only checks once__: Using if assumes the condition is still valid after waking up — this is unsafe.
+    - __`if()` only checks once__: Using `if()` assumes the condition is still valid after waking up — this is unsafe.
 
 !!! warning
 
@@ -191,4 +190,125 @@ public class ProducerConsumer {
     - __Starvation__: A thread waits indefinitely because higher-priority threads are always favored.
 
 
-## Thread Pools
+## Threads
+
+- ==Every Java program starts with a main thread. It begins when the JVM calls your main() method.==
+- A thread is the smallest unit of execution in a program. Java allows multithreading.
+- Threads in Java are managed by the JVM and the underlying OS.
+- You can create threads in 3 main ways:
+
+=== "`Thread` Class"
+
+    ```java hl_lines="1 3 11"
+    class MyThread extends Thread {
+        @Override
+        public void run() {
+            System.out.println("Thread running: " + Thread.currentThread().getName());
+        }
+    }
+
+    public class Main {
+        public static void main(String[] args) {
+            MyThread t1 = new MyThread();
+            t1.start();  // Starts the new thread
+        }
+    }
+    ```
+
+=== "`Runnable` Interface"
+
+    - ==Allows extending another class (since Java supports single inheritance).==
+
+    ```java hl_lines="1 3 11"
+    class MyRunnable implements Runnable {
+        @Override
+        public void run() {
+            System.out.println("Thread running: " + Thread.currentThread().getName());
+        }
+    }
+
+    public class Main {
+        public static void main(String[] args) {
+            Thread t1 = new Thread(new MyRunnable());
+            t1.start();
+        }
+    }
+    ```
+
+=== "Lambda Expression"
+
+    ```java hl_lines="3-6"
+    public class Main {
+        public static void main(String[] args) {
+            Thread t1 = new Thread(() -> {
+                System.out.println("Thread running: " + Thread.currentThread().getName());
+            });
+            t1.start();
+        }
+    }
+    ```
+
+### Components
+
+| Component                | Description                                      |
+| ------------------------ | ------------------------------------------------ |
+| __Thread Stack__         | Stores method calls and local variables          |
+| __Program Counter (PC)__ | Keeps track of which instruction to execute next |
+| __Thread Object__        | Contains thread ID, name, priority, etc.         |
+
+
+### Lifecycles
+
+| State                     | Description                           |
+| ------------------------- | ------------------------------------- |
+| __New__                   | Thread is created but not started     |
+| __Runnable__              | Ready to run, waiting for CPU         |
+| __Running__               | Actively executing                    |
+| __Blocked__               | Waiting for a lock                    |
+| __Waiting/Timed Waiting__ | Waiting for another thread or timeout |
+| __Terminated__            | Thread has completed or crashed       |
+
+
+### Memory Allocation in Multithreading
+
+- Java threads operate on the Java Memory Model (JMM), which defines how memory is shared between threads.
+
+| Area            | Shared?      | Description                             |
+| --------------- | ------------ | --------------------------------------- |
+| __Heap__        | ✅ Shared     | All objects, class instances live here  |
+| __Stack__       | ❌ Not shared | Each thread has its __own stack__       |
+| __Method Area__ | ✅ Shared     | Stores class metadata, static variables |
+
+
+### Multithreading Terms
+
+| Term                | Description                                              |
+| ------------------- | -------------------------------------------------------- |
+| __Concurrency__     | Multiple threads make progress independently             |
+| __Parallelism__     | Threads truly run in parallel (on multi-core CPUs)       |
+| __Race Condition__  | Two threads accessing shared data without sync           |
+| __Thread Safety__   | Code behaves correctly when accessed by multiple threads |
+| __Synchronization__ | Controls access to shared resources                      |
+
+### Thread Priorities
+
+- Each thread in Java has a priority, which is an integer value between 1 (lowest) and 10 (highest). 
+- Used by the thread scheduler (provided by the JVM and OS) to decide which thread to run next, especially when multiple threads are competing for CPU time.
+- Priority Constants:
+    - `Thread.MIN_PRIORITY`: 1
+    - `Thread.NORM_PRIORITY`: 5
+    - `Thread.MAX_PRIORITY`: 10
+
+```java
+Thread t1 = new Thread(() -> {
+    System.out.println("Running Thread 1");
+});
+
+t1.setPriority(Thread.MAX_PRIORITY);  // Set high priority
+// Or custom values
+t1.setPriority(7);
+t1.start();
+```
+
+
+### Thread Pools

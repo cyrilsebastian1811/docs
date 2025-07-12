@@ -738,7 +738,7 @@ useEffect(() => {}, [...dependencies]);
 ??? warning "Why useMemo and useCallback?"
 
     In React: Functions and objects are recreated on every render.
-    
+
     - This can cause unwanted re-renders in child components or expensive recalculations
     - `useMemo` and `useCallback` help memoize values/functions so they only change when needed.
 
@@ -747,7 +747,7 @@ useEffect(() => {}, [...dependencies]);
 - Caches the result of a calculation until dependencies change.
 - Memoize Expensive Values
 
-```jsx hl_lines="5"
+```jsx hl_lines="5 9 11"
 import { useMemo, useState } from 'react';
 
 // 🔥 Without useMemo, React would recalculate on every render, even if n hasn't changed.
@@ -758,7 +758,7 @@ const Fibonacci = ({ n }) => {
     return calc(n);
   }, [n]);
 
-  return (<div>Fibonacci({n}) = {fib}</div>);
+  return (<div>Result of Fibonacci({n}) = {fib}</div>);
 }
 ```
 
@@ -766,7 +766,7 @@ const Fibonacci = ({ n }) => {
 
 - Caches the function definition so it doesn’t get recreated on every render.
 
-```jsx hl_lines="8 15"
+```jsx hl_lines="8 10 15 21"
 import { useState, useCallback } from 'react';
 
 const Parent = () => {
@@ -796,7 +796,7 @@ const Child = ({ onClick }) => {
     - `React.memo` is a higher-order component that tells React: Only re-render this component if its `props` have changed
     - It memoizes the result of the render — like caching — and skips rendering if props are the same as last time.
 
-    ```jsx hl_lines="10"
+    ```jsx hl_lines="12 18"
     const Parent = ({ count }) => {
       const [text, setText] = useState("");
 
@@ -808,7 +808,7 @@ const Child = ({ onClick }) => {
       );
     }
 
-    // Re-renders everytime parent renders regardless of whether props changes or not
+    // Re-renders everytime parent renders regardless whether props changes or not
     // const Child = ({ count }) => {
     //   console.log("Child rendered");
     //   return <div>Count: {count}</div>;
@@ -924,7 +924,6 @@ const App = () => {
 ```
 
 
-
 ## Routing
 
 - `BrowserRouter` initializes the `App` component with routing capabilities.
@@ -934,7 +933,9 @@ const App = () => {
 import { BrowserRouter, Route } from 'react-router-dom';
 
 root.render(
-  <BrowserRouter><App /></BrowserRouter>
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
 );
 
 const App = () => {
@@ -944,39 +945,83 @@ const App = () => {
       <Route path="/welcome"><Welcome /></Route>
       // matches all /products/*
       <Route path="/products"><Products /></Route>
+      // matches all /products/productId/* paths
+      <Route path="/products/:productId"><ProductDetail /></Route> 
     </div>
   );
 }
 ```
 
 
-### Switch
+### Switch/Routes
 
-- Switch renders one active route at a time.
-- In the example below both Products(`/products`) and ProductDetails(`/products/:productId`) matches `/products/p1` url. Thus, `<Products />` will be rendered
-- `exact` checks for an exact url match. e.g. `/products/p1` renders the first match(<Products />) followed by the second match(<ProductDetails />).
+- Renders one active route at a time. 2 Types:
+- `<Switch>`:
+    - Renders first match.
+    - Children must be `<Route>`
+- `<Routes>`:
+    - Renders best match
+    - Children must be <Route> with element prop
 
-```jsx 
-import { Switch, Route } from 'react-router-dom';
+=== "Routes (v6+)"
 
-const App = () => {
-  return (
-    <div>
-      <Switch>
-        <Route path="/welcome"><Welcome /></Route>
-        <Route path="/products" exact><Products /></Route> // matches all /products* paths
-        <Route path="/products/:productId"><ProductDetail /></Route> // matches all /products/* paths
-      </Switch>
-    </div>
-  );
-}
-```
+    ```jsx hl_lines="7 13 16"
+    import { Routes, Route, Navigate } from 'react-router-dom';
+    const App = () => {
+      return (
+        <div>
+          <Routes>
+            // Redirect from `/` to `/welcome`
+            <Route path="/" element={<Navigate to="/welcome" replace />} />
+
+            // Static route
+            <Route path="/welcome" element={<Welcome />} />
+
+            // Products main page
+            <Route path="/products" element={<Products />} />
+
+            // Product detail route with path param
+            <Route path="/products/:productId" element={<ProductDetail />} />
+          </Routes>
+        </div>
+      );
+    };
+    ```
+
+=== "Switch Deprecated(v6)"
+
+    - `<Redirect />` redirects to a different route.
+    - In the example below, `/products/p1` url match `<Products />` and `<ProductDetails />`. But, Switch renders just one, the first one `<Products />`.
+    - In actuality, `/products/p1` should render only `<ProductDetails />`. Solution, `exact`, which can check for an exact url match.
+
+    ```jsx hl_lines="7-12"
+    import { Switch, Route, Redirect } from 'react-router-dom';
+
+    const App = () => {
+      return (
+        <div>
+          <Switch>
+            // In this case since everthing matches `/`, we will get an infinite loop.
+            // As `/` -> `/welcome` -> `/` ...
+            // Solution:
+            <Route path="/" exact>
+              <Redirect to="/welcome" />
+            </Route>
+            <Route path="/welcome"><Welcome /></Route>
+            
+            <Route path="/products" exact><Products /></Route>           // matches: `/products*`
+            <Route path="/products/:productId"><ProductDetail /></Route> // matches: `/products/*`
+         </Switch>
+        </div>
+      );
+    }
+    ```
 
 
 ### Link and NavLink
 
-- In order to render the Welcome or Products component, user would have to manually change the url to either `/welcome` or `/products` . But it's common to have links in the app to manipulate the url and sequentially render the appropriate component.
-- Both Link and NavLink creates an <a> tag implicitly
+- Rather than typing the urls on browser address bar to render the necessary components. We would like navigable `<a>` tags.
+- `<Link>`, `<NavLink>` provides this capability. Both,creates an `<a>` tag implicitly.
 
 ```jsx
 <nav>
@@ -984,35 +1029,35 @@ const App = () => {
     <li><Link to="/welcome">Welcome</Link></li>
     <li><Link to="/products">Welcome</Link></li>
 
-    {/* NavLink can be used to provide custom styling to active link */}
-    <li><NavLink activeClassName="active" to="/orders">Orders</Link></li>
-    <li><NavLink activeClassName="active" to="/users">Users</Link></li>
+    // NavLink can be used to provide custom styling to active link
+    <li><NavLink activeClassName="active" to="/orders">Orders</NavLink></li>
+    <li><NavLink activeClassName="active" to="/users">Users</NavLink></li>
   </ul>
 </nav>
 ```
 
 
-### Path and Query parameters
+### Path and Query Parameters
 
-```jsx
-// dynamic routes 
-// <Route path="/products/:productId/:userId?sort=asc"><ProductDetail /></Route>
+- `useParams`: Can get path params(e.g. `/products/:productId/:userId`)
+- `useLocation`: Use it to:
+    - Access the current URL. e.g. `location.pathname`
+    - Read query parameters (?key=value). e.g. `location.search`
 
+```jsx hl_lines="5 8 12-13" title="URL: /products/:productId/:userId?sort=asc"
 import { useParams, useLocation } from 'react-router-dom';
 
 const ProductDetail = () => {
   // path params
   const params = useParams();
 
-  //
-  const location = useLocation();
-
-  // query params
-  const queryParams = new URLSearchParams(location.search);
+  // Extract query params
+  const queryParams = new URLSearchParams(useLocation().search);
 
   return (
     <div>
-      <h1>{params.userId}. This is the Product: {params.productId}. sorting order {queryParams.get('sort')}</h1>
+      <h1>{params.userId}. This is the Product: {params.productId}</h1>
+      <p>Dorting order {queryParams.get('sort')}</p>
     </div>
   );
 }
@@ -1022,13 +1067,13 @@ const ProductDetail = () => {
 ### Nested Route
 
 ``` jsx
+// `/welcome` -> <Welcome />
 const Welcome = () => {
   return (
     <section>
       <h1>Welcome Page</h1>
-      {/* Nested Route. This Route is evaluted if /welcome route is active */}
-      {/* /welcome -> Welcome component */}
-      {/* /welcome/new-user -> Welcome and NewUser component */}
+      // Nested Route: This Route is evaluted if `/welcome` route is active
+      // `/welcome/new-user` -> <NewUser /> in <Welcome /> component
       <Route path="/welcome/new-user">
         <h1>Welcome, new user!</h1>
       </Route>
@@ -1037,41 +1082,36 @@ const Welcome = () => {
 }
 ```
 
-You can have Route in other Routes
-
-```jsx
-import { Switch, Route } from 'react-router-dom';
-const App = () => {
-  // Route componet listens to url events to render the necessary component at the specified location
-  return (
-    <div>
-      <Switch>
-		{/* without exact, the app would be stuck in an infinite loop(everything matches /) */}
-        <Route path="/" exact>
-		      <Redirect to="/welcome" />
-	 	    </Route>
-        <Route path="/welcome"><Welcome /></Route>
-        <Route path="/products" exact><Products /></Route> # matches all /products* paths
-        <Route path="/products/:productId"><ProductDetail /></Route> {/* matches all /products/* paths */}
-      </Switch>
-    </div>
-  );
-}
-```
 
 ### Programatic Navigation
 
-```jsx
-import { useHistory, useNavigate } from "react-router-dom";
-const history = useHistory();
+- ==Browser's maintain a navigation history stack==. Navigation history can be pushed to this stack.
+- We can use browser Back/Forward button to traverse history.
 
-history.push("/quotes"); {/* retains the history. i.e can navigate back to current page upon redirect*/}
-history.replace("/quotes"); {/* history is lost. i.e can't navigate back to current page upon redirect*/}
+=== "[useNavigate( v6+)](https://reactrouter.com/en/main/hooks/use-navigate)"
 
-{/* https://reactrouter.com/en/main/hooks/use-navigate */}
-const navigate = useNavigate();
-navigate("/quotes", { replace: true });
-```
+    ```jsx title="useNavigate"
+    import { useNavigate } from "react-router-dom";
+
+    const navigate = useNavigate();
+
+    navigate("/quotes");                        // push to history 
+
+    navigate("/quotes", { replace: true });     // replaces history instead of pushing
+    ```
+
+=== "useHistory Deprecate(v6)"
+
+    ```jsx title="useHistory - Deprecated"
+    import { useHistory } from "react-router-dom";
+    const history = useHistory();
+
+    history.push("/quotes");            // push to history 
+
+    history.replace("/quotes");         // replaces history instead of pushing
+
+    history.goBack();
+    ```
 
 
 ## App-wide State Management
@@ -1175,7 +1215,8 @@ const Toolbar = () => {
       switch (action.type) {
         // Return a cloned verions of the state
         case "INCREASE": return {
-          counter: (state.counter + action.amt), showCounter
+          counter: (state.counter + action.amt),
+          showCounter
         }
         case "TOGGLE": return {
           counter: state.counter,

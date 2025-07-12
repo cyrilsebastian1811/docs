@@ -334,66 +334,20 @@ Our Users for illustration:
             -- Creates an index on role_id
             -- Speeds up queries that fetch all users with a specific role.
             KEY `FK_ROLE_idx` (`role_id`),
+            -- Creates an index on user_id
+            -- Speeds up queries that fetch all roles for a specific user.
+            KEY `FK_USER_idx` (`user_id`),
             -- ON DELETE NO ACTION: Prevents deletion of a user if they have associated roles.
             -- ON UPDATE NO ACTION: Prevents updates to user.id if referenced.
-            CONSTRAINT `FK_USER_05` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+            CONSTRAINT `FK_USER` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
             CONSTRAINT `FK_ROLE` FOREIGN KEY (`role_id`) REFERENCES `role` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             ``` 
 
         ``` .java
-        @Configuration
-        public class SecurityConfig {
-            @Bean
-            public PasswordEncoder passwordEncoder() {
-                return new BCryptPasswordEncoder();
-            }
-
-            // @Autowired not specified to inject UserService
-            // @Bean handles this automatically
-            @Bean
-            public DaoAuthenticationProvider authenticationProvider(UserService userService) {
-                DaoAuthenticationProvider auth  = new DaoAuthenticationProvider();
-                //set the custom user details service
-                auth.setUserDetailsService(userService);
-                //set the password encoder - bcrypt
-                auth.setPasswordEncoder(passwordEncoder());
-                return auth;
-            }
-        }
-
-        @Service
-        public class UserService implements UserDetailsService {
-            private UserDao userDao;
-
-            @Autowired
-            public UserService(UserDao userDao) { this.userDao = userDao; }
-
-            @Override
-            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-                User user = userDao.findByUserName(username);
-                if (user == null) {
-                    throw new UsernameNotFoundException("Invalid username or password");
-                }
-
-                // Converting custom User to userdetails.User
-                return new org.springframework.security.core.userdetails.User(
-                    user.getUserName(),
-                    user.getPassword(),
-                    mapRolesToAuthorities(user.getRoles()));
-            }
-
-            private Collection<? extends GrantedAuthority> mapRolesToAuthorities(Collection<Role> roles) {
-                return roles
-                    .stream()
-                    .map(role -> new SimpleGrantedAuthority(role.getName()))
-                    .collect(Collectors.toList());
-            }
-        }
-
         @Entity
         @Table(name = "user")
-        public class User {
+        public class AuthUser {
             @Id
             @GeneratedValue(strategy = GenerationType.IDENTITY)
             @Column(name = "id")
@@ -422,6 +376,56 @@ Our Users for illustration:
 
             @Column(name = "name")
             private String name;
+        }
+
+        @Service
+        public class AuthUserService implements UserDetailsService {
+            // Must implement AuthUserDao. Not provided by spring
+            private AuthUserDao authUserDao;
+
+            @Autowired
+            public AuthUserService(AuthUserDao authUserDao) { this.authUserDao = authUserDao; }
+
+            @Override
+            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+                User user = authUserDao.findByUserName(username);   // includes roles
+                if (user == null) {
+                    throw new UsernameNotFoundException("Invalid username or password");
+                }
+
+                // Converting custom User to userdetails.User
+                return new org.springframework.security.core.userdetails.User(
+                    user.getUserName(),
+                    user.getPassword(),
+                    mapRolesToAuthorities(user.getRoles()));
+            }
+
+            private Collection<? extends GrantedAuthority> mapRolesToAuthorities(Collection<Role> roles) {
+                return roles
+                    .stream()
+                    .map(role -> new SimpleGrantedAuthority(role.getName()))
+                    .collect(Collectors.toList());
+            }
+        }
+
+        @Configuration
+        public class SecurityConfig {
+            @Bean
+            public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+            }
+
+            // @Autowired not specified to inject UserService
+            // @Bean handles this automatically
+            @Bean
+            public DaoAuthenticationProvider authenticationProvider(AuthUserService authUserService) {
+                DaoAuthenticationProvider auth  = new DaoAuthenticationProvider();
+                // Set the custom user details service
+                auth.setUserDetailsService(authUserService);
+                // Set the password encoder - bcrypt
+                auth.setPasswordEncoder(passwordEncoder());
+                return auth;
+            }
         }
         ```
 

@@ -42,14 +42,135 @@ my-app/
     - Makes it much easier to get started with Spring.
     - reduces the amount of configuration required.
     - e.g. `spring-boot-starter-web`, `spring-boot-starter-security`, `spring-boot-starter-data-jpa`. [full list](https://docs.spring.io/spring-boot/reference/using/build-systems.html#using.build-systems.starters)
-    <div style="text-align: center;">
-        <img src="./img/spring-boot-starters.png" alt="Spring Boot Starters"/>
-    </div>
+    <figure markdown="span">
+        ![Spring Boot Starters](./img/spring-boot-starters.png){ width="50%" }
+        <figcaption>Spring Boot Starters</figcaption>
+    </figure>
 - __Spring Boot Starter Parent__: It is a specialized parent POM that provides default configurations when using Maven. And, it simplifies dependency management by:
     - Defining default versions for Spring Boot and related dependencies.
     - Providing common build configurations(e.g. compiler settings, resource filtering)
 - __Spring Boot BOM__: In gradle setup, dependencies are managed using BOM(Bill of Materials). [Full details](../../automation/build/gradle.md#spring-boot-bom)
 - __Spring Boot Dev Tools__: Automatically restarts your application when code is updated
+
+
+## Spring Architecture
+
+<figure markdown="span">
+  ![Spring MVC Architecture](./img/spring-mvc-architecture.png)
+  <figcaption>Spring MVC Architecture</figcaption>
+</figure>
+
+```mermaid
+graph TD
+    T["Apache Tomcat<br/>(Servlet Container)"]
+
+    T --> A["App A (WAR)"]
+    T --> B["App B (WAR)"]
+
+    subgraph App_A["context path: /appA"]
+        SC_A["ServletContext A<br/>(created by Tomcat)"]
+        DS_A["DispatcherServlet A<br/>(registered in web.xml or via Spring)"]
+        WAC_A["WebApplicationContext A<br/>(Spring MVC Context)"]
+        ControllersA["Controllers / Services / ViewResolvers A"]
+
+        A --> SC_A --> DS_A --> WAC_A --> ControllersA
+    end
+
+    subgraph App_B["context path: /appB"]
+        SC_B["ServletContext B<br/>(created by Tomcat)"]
+        DS_B["DispatcherServlet B<br/>(registered in web.xml or via Spring)"]
+        WAC_B["WebApplicationContext B"]
+        ControllersB["Controllers / Services / ViewResolvers B"]
+
+        B --> SC_B --> DS_B --> WAC_B --> ControllersB
+    end
+```
+
+??? note "Servlet/Web Container"
+
+    - A part of a Java EE server (e.g., Apache Tomcat, Jetty, GlassFish) that provides the runtime environment for Servlets.
+    - Tomcat creates a separate classloader and ServletContext for each deployed WAR to ensure isolation.
+    - Loads, manages, and executes servlets.
+    - Handles HTTP requests and responses.
+    - Provides:
+        - Multithreading
+        - Servlet Lifecycle management (init, service, destroy)
+        - Session and cookie management: Manages HTTP sessions, cookies, and tracking
+        - Access to the ServletContext and HttpServletRequest
+        - Security & Config: Handles authentication, SSL, and web.xml-based config
+
+
+??? note "Servlet"
+
+    - A Java class that handles HTTP requests (like a controller) and generates responses (usually HTML, JSON, etc.).
+    - Lifecycle:
+        - `init()`: Called __once__ when the servlet is first created
+        - `service()`: Called for __each request__, dispatches to `doGet()`, `doPost()`, etc.
+        - `destroy()`: Called once when the servlet is removed (e.g., server shutdown)
+    - Spring MVC builds on top of the Servlet API. But, most of the servlets are abstracted by Spring.
+
+    __Types__:
+
+    === "`DispatcherServlet`"
+
+        - The Front Controller
+        - Central servlet that intercepts all incoming HTTP requests.
+        - Delegates request handling to appropriate controllers, view resolvers, and handlers.
+        - Configured in 2 ways:
+            - `web.xml`(legacy, XML-based setup)
+            - `WebApplicationInitializer` / `SpringBootServletInitializer` in Spring Boot
+
+    === "`HttpServlet`"
+
+        - `DispatcherServlet` is a subclass of `HttpServlet`.
+        - It handles: `doGet`, `doPost`, `doPut`, `doDelete` under the hood.
+
+    === "`FrameworkServlet`"
+
+        - `DispatcherServlet` extends `FrameworkServlet`, which handles: 
+            - Application context setup
+            - Locale resolution
+            - Multipart (file upload) support
+
+    === "Other Filters (Servlet-Based)"
+
+        Spring Boot auto-configures these as servlet filters:
+
+        - `SpringSecurityFilterChain` (if using Spring Security)
+        - `CorsFilter` (for CORS handling)
+        - `RequestContextFilter`
+
+        These are not servlets, but filters, meaning they run before the DispatcherServlet.
+
+
+??? note "Contexts"
+
+    === "`ServletContext`"
+
+        - Provided by the Servlet container (like Tomcat or Jetty).
+        - Each deployed app has its own ServletContext.
+        - Represents the web apps global configuration and resources.
+        - Shared across all servlets and filters.
+        - Part of Servlet API, not Spring-specific.
+        - Responsibilities:
+            - Storing app-wide parameters (setAttribute)
+            - Accessing resources (getResource)
+            - Logging (log)
+            - Getting servlet context path, real path, etc.
+
+    === "ApplicationContext"
+
+        - Each DispatcherServlet initializes its own WebApplicationContext, which is a Spring container.
+        - The ApplicationContext is the central interface to the Spring IoC container.
+        - Variants:
+            - `AnnotationConfigApplicationContext` (for Java-based config)
+            - `WebApplicationContext` (specialized for web apps. Wire web-related beans like controllers and services.)
+            - `ClassPathXmlApplicationContext` (for XML config)
+        - Responsibilities:
+            - Creating and managing beans (i.e., dependency injection)
+            - Handling configuration (from XML, Java annotations, or properties)
+            - Managing the lifecycle of application components
+            - Providing features like internationalization, event publishing, and more
 
 
 ## Actuator
@@ -94,7 +215,6 @@ info.app.version = 0.0.1-SNAPSHOT
 
 - These endpoints can also be secured. [details](https://docs.spring.io/spring-boot/reference/actuator/endpoints.html#actuator.endpoints.security)
 
-
 ## Spring Container
 
 - Leverages __Inversion of Control__ to create and manage objects.
@@ -118,8 +238,8 @@ Spring Scans for special annotations like `@Component`, `@Service`, `@Controller
 
 ### Annotaion based injection types
 
-``` .java title="Bean Class"
-@Component
+``` .java title="Bean Class" hl_lines="1"
+@Component("myCustomBeanId")
 public class CricketCoach {
     ...
 }
@@ -145,7 +265,7 @@ public class CricketCoach {
 
     Use this when you have optional dependencies
 
-    ``` .java
+    ``` .java hl_lines="5"
     @RestController
     public class DemoController {
         private CricketCoach cricketCoach;
@@ -256,12 +376,12 @@ Scope refers to how many instances are created and how they are shared.
 
 | Scope | Description |
 | --- | --- |
-| singleton | (Default) Scopes a single bean definition to a single object instance for each Spring IoC container. |
-| prototype | Scopes a single bean definition to any number of object instances. |
-| request | Scopes a single bean definition to the lifecycle of a single HTTP request. That is, each HTTP request has its own instance of a bean created off the back of a single bean definition. Only valid in the context of a web-aware Spring ApplicationContext. |
-| session | Scopes a single bean definition to the lifecycle of an HTTP Session. Only valid in the context of a web-aware Spring ApplicationContext. |
-| application | Scopes a single bean definition to the lifecycle of a ServletContext. Only valid in the context of a web-aware Spring ApplicationContext. |
-| websocket | Scopes a single bean definition to the lifecycle of a WebSocket. Only valid in the context of a web-aware Spring ApplicationContext. |
+| singleton | One instance per Spring container (default) |
+| prototype | New instance per request to getBean() |
+| request | One instance per HTTP request |
+| session | One instance per HTTP session |
+| application | One instance per ServletContext (web app) |
+| websocket | One instance per WebSocket session |
 
 ``` .java title="Singleton or Prototype scopes"
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -283,7 +403,8 @@ public class CricketCoach implements Coach { }
 
 ### Bean Lifecycle
 
-Allows execution of custom business logic during bean initialization or desctruction. e.g:
+Allows execution of custom business logic during bean initialization or desctruction. e.g.
+
 - Setting up handles to resources (db. socket, file, etc)
 - Clean up handles to resources (db. socket, file, etc)
 
@@ -306,7 +427,7 @@ public class CricketCoach implements Coach {
 
 !!! warning
 
-    ==Spring does not manage the complete lifecycle of a prototype bean==. Thus, although initialization lifecycle callback methods are called on all objects regardless of scope, in the case of prototypes, configured destruction lifecycle callbacks are not called. The client code must clean up prototype-scoped objects and release expensive resources that the prototype bean(s) are holding.
+    ==Spring does not manage the complete lifecycle of a prototype bean==. Although, initialization lifecycle callback methods are called on all objects regardless of scope, in the case of prototypes, configured destruction lifecycle callbacks are not called. The client code must clean up prototype-scoped objects and release expensive resources that the prototype bean(s) are holding.
 
 ### Code Based Dependency Injection
 

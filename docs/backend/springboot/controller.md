@@ -245,7 +245,7 @@ __Pagination & Sorting APIs__:
 - Intermediate layer for custom business logic.
 - Integrate data from multiple sources (DAO/repositories).
 - We use `@Service` annotation, which is a sub-type of `@Component`
-- ==`@Transactional` annotation added to service instead of DAO, as service defines transactional boundaries.==
+- ==`@Transactional` annotation is added to service instead of DAO, as service defines transactional boundaries.==
 
 
 ``` .java
@@ -310,11 +310,16 @@ public class StudentNotFoundException extends RuntimeException {
 @RequestMapping("/api")
 public class StudentRestController {
 
-    @ExceptionHandler
+    @ExceptionHandler(StudentNotFoundException.class)
     public ResponseEntity<StudentErrorResponse> handleStudentNotFoundException(StudentNotFoundException exc) {
         StudentErrorResponse error = new StudentErrorResponse(HttpStatus.NOT_FOUND.value(), exc.getMessage(), System.currentTimeMillis());
 
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid input: " + ex.getMessage());
     }
 
     @GetMapping("/students/{Id}")
@@ -337,6 +342,12 @@ public class StudentRestExceptionHandler {
 
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleGenericException(Exception exc) {
+        String errorMessage = "Error: " + exc.getMessage();
+        return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST);
+    }
 }
 ```
 
@@ -344,3 +355,83 @@ public class StudentRestExceptionHandler {
     - Pre-process request to controllers
     - Post-process response to handle exceptions
     - Perfect for global exception handling
+
+
+## Filter
+
+- Framework Level: Servlet specification (Java EE / Jakarta EE)
+- Executes before `DispatcherServlet`
+- Scope: Entire web application
+- Request Mapping Knowledge: No knowledge of controller or handler
+- At the filter stage: There is no knowledge of which controller will handle the request.
+- Return Value Control:	Indirect — via `FilterChain.doFilter()`
+- Use case: CORS, Security, Encoding
+
+=== "Register via Annotation"
+
+    ```java
+    @WebFilter("/*")
+    public class LoggingFilter implements Filter {
+        @Override
+        public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+                throws IOException, ServletException {
+            System.out.println("[Filter] Request received: " + ((HttpServletRequest) request).getRequestURI());
+            chain.doFilter(request, response); // pass to next filter or DispatcherServlet
+            System.out.println("[Filter] Response sent");
+        }
+    }
+    ```
+
+=== "Register via Bean"
+
+    ```java
+    public class LoggingFilter implements Filter {...}
+
+    @Bean
+    public FilterRegistrationBean<LoggingFilter> loggingFilter() {
+        FilterRegistrationBean<LoggingFilter> reg = new FilterRegistrationBean<>();
+        reg.setFilter(new LoggingFilter());
+        reg.addUrlPatterns("/*");
+        return reg;
+    }
+    ```
+
+
+## Interceptor
+
+- Framework Level: Spring MVC
+- Executes: Before and after controller methods
+- Scope: Only Spring MVC controller requests.
+- Request Mapping Knowledge: Can access handler method details.
+- Return Value Control:	Direct — can return false to block flow
+- Use case: CORS, Security, Encoding
+
+```java title="Defining Interceptor"
+@Component
+public class AuthInterceptor implements HandlerInterceptor {
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        String auth = request.getHeader("Authorization");
+        if (auth == null || !auth.startsWith("Bearer ")) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            return false; // Stop processing
+        }
+        return true; // Continue to controller
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        System.out.println("[Interceptor] Request completed");
+    }
+}
+```
+```java title="Registering Interceptor"
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new AuthInterceptor()).addPathPatterns("/api/**");
+    }
+}
+```

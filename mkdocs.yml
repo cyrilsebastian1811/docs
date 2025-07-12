@@ -15,6 +15,7 @@ nav:
   - Languages:
     - OOP: languages/oop.md
     - java:
+      - languages/java/index.md
       - languages/java/threads.md
 
   - "Build Automation":
