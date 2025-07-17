@@ -131,7 +131,7 @@ __Normalization Forms (1NF - 3NF)__: Normalization is applied in __stages__, cal
 
 === "__1NF: First Normal Form__"
 
-    __Rule:__ Remove duplicate columns & ensure atomicity (single values per field).  
+    __Rule:__ No repeating groups. i.e. each field contains only atomic values(single values per field).  
 
     === "Example (Before 1NF)"
         | Order_ID | Customer_Name | Products       |
@@ -163,10 +163,10 @@ __Normalization Forms (1NF - 3NF)__: Normalization is applied in __stages__, cal
 
         __Orders Table__
 
-        | Order_ID | Customer_ID |
+        <!-- | Order_ID | Customer_ID |
         |----------|------------|
         | 1        | 101        |
-        | 2        | 102        |
+        | 2        | 102        | -->
 
         __Customers Table__
 
@@ -175,13 +175,13 @@ __Normalization Forms (1NF - 3NF)__: Normalization is applied in __stages__, cal
         | 101        | John Doe      | NY, USA       |
         | 102        | Jane Smith    | LA, USA       |
 
-        __Order Details Table__
+        __Orders Table__
 
-        | Order_ID | Product  |
-        |----------|---------|
-        | 1        | Laptop  |
-        | 1        | Mouse   |
-        | 2        | Phone   |
+        | Order_ID | Customer_ID | Product  |
+        |----------|-------------|----------|
+        | 1        | 101         | Laptop   |
+        | 2        | 101         | Mouse    |
+        | 3        | 102         | Phone    |
 
 === "__3NF: Third Normal Form__"
 
