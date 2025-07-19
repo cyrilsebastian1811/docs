@@ -128,7 +128,7 @@ graph LR
 ```markdown
 <!-- Example -->
 <figure markdown="span">
-    ![Example Title](./relative_path/image.png)
+    ![Example Title](./relative_path/image.png){ width="600" }
     <figcaption>Example Caption</figcaption>
 </figure>
 ```

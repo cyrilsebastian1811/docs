@@ -43,9 +43,9 @@ A particular stream of data. Analogous to a table in a database, without all the
 - The sequence of messages is called a data stream.
 - Can't query topics. Data is inserted my Kafka producers and read by Kafka consumers.
 
-<div style="text-align: center;">
-    <img src="./img/topics.png" alt="topics" width="30%"/>
-</div>
+<figure markdown="span">
+    ![topics](./img/topics.png){ width="50%" }
+</figure>
 
 ### Partitions and offsets
 
@@ -65,13 +65,13 @@ Topics are split into partitions. Messages to a topic is distributed among parti
 
     The messages are appended to physical data structure of the partition called a commit log. Commit log is organized as a collection of segments. Each segment is made up of several files, One of these, a `.log` file, contains the event data. A second, a `.index` file, contains an index structure, which maps record offset to the position of that record in the `.log` file.
 
-    <div style="text-align: center;">
-        <img src="./img/physical-storage.png" alt="Kafka physical storage"/>
-    </div>
+    <figure markdown="span">
+        ![Kafka physical storage](./img/physical-storage.png)
+    </figure>
 
-<div style="text-align: center;">
-    <img src="./img/partitions.png" alt="partitions"/>
-</div>
+<figure markdown="span">
+    ![partitions](./img/partitions.png)
+</figure>
 
 ### Message/Record
 
@@ -80,9 +80,9 @@ A message consistes of a key, value, headers, timestamp, partition, offset, etc.
 - Kafka only accepts bytes as input from producers and sends bytes as output to consumers.
 - Kafka partitioner, a code logic determines the partition for a record/message
 
-<div style="text-align: center;">
-    <img src="./img/message-anatomy.png" alt="Message Anatomy" width="50%"/>
-</div>
+<figure markdown="span">
+    ![Message Anatomy](./img/message-anatomy.png){ width="50%" }
+</figure>
 
 !!! warning
 
@@ -102,9 +102,10 @@ A message consistes of a key, value, headers, timestamp, partition, offset, etc.
 
     Sending records one at a time would be inefficient due to the overhead of repeated network requests. So, the producer batch records for a given partition. Batching also provides for much more effective compression, when compression is used. This can configured by setting `batch.size` and `linger.ms`
 
-<div style="text-align: center;">
-    <img src="./img/serialization.png" alt="Serialization" width="50%"/>
-</div>
+<figure markdown="span">
+    ![Serialization](./img/serialization.png){ width="50%" }
+</figure>
+
 
 ### Consumers
 
@@ -114,9 +115,9 @@ A message consistes of a key, value, headers, timestamp, partition, offset, etc.
 - Data is read in order from low to high offset ==within each partition==
 - Deserialization: transforms bytes into objects/data. They are used on key and Value. Consimers deserialize the data received. Consumers come with common deserializers(String, float, int, etc...)
 
-<div style="text-align: center;">
-    <img src="./img/deserialization.png" alt="Deserialization" width="50%"/>
-</div>
+<figure markdown="span">
+    ![Deserialization](./img/deserialization.png){ width="50%" }
+</figure>
 
 ### Consumer groups
 
@@ -126,9 +127,9 @@ A message consistes of a key, value, headers, timestamp, partition, offset, etc.
 - You can have multiple consumer groups consuming from the same topic
 - To create distict consumer groups, use the consumer property group.id
 
-<div style="text-align: center;">
-    <img src="./img/consumer-groups.png" alt="Consumer Groups"/>
-</div>
+<figure markdown="span">
+    ![Consumer Groups](./img/consumer-groups.png)
+</figure>
 
 #### Consumer group Offsets
 
@@ -153,13 +154,13 @@ A message consistes of a key, value, headers, timestamp, partition, offset, etc.
 - After connecting to any brooker(called a bootstrap broker), you will be connected to the entire cluster
 - Each broker knows about all brokers, topics, and partitions(metadata)
 
-<div style="text-align: center;">
-    <img src="./img/brokers.png" alt="Brokers"/>
-</div>
+<figure markdown="span">
+    ![Brokers](./img/brokers.png)
+</figure>
 
-<div style="text-align: center;">
-    <img src="./img/client-connection-flow.png" alt="Client Connection Flow"/>
-</div>
+<figure markdown="span">
+    ![Client Connection Flow](./img/client-connection-flow.png)
+</figure>
 
 ### Topic Replication
 
@@ -171,9 +172,9 @@ A message consistes of a key, value, headers, timestamp, partition, offset, etc.
 - Consumer by default read from the leader brooker of a partition. Although possible to configure to read from the closest replica
 - replication factor should be less than or equal to number of brokers. If not topic creation fails
 
-<div style="text-align: center;">
-    <img src="./img/topic-replication.png" alt="Topic Replication"/>
-</div>
+<figure markdown="span">
+    ![Topic Replication](./img/topic-replication.png)
+</figure>
 
 ### Producer Acknowledgments & Topic Durability
 
@@ -198,13 +199,9 @@ A dedicate broker called the Controller broker is responsible for managing and c
 - ==Maintains the mapping of replicas to Broker and topic configurations. Thus losing Zookeeper would render Kafka no longer functinoal with potential data loss==
 - Requires a seperate security system from that used for Kafka. Thus making the setup complicated
 
-<!-- <div style="text-align: center;">
-    <img src="./img/zookeeper.png" alt="ZooKeeper"/>
-</div> -->
-
-<div style="text-align: center;">
-    <img src="./img/zookeeper_setup.png" alt="ZooKeeper Setup"/>
-</div>
+<figure markdown="span">
+    ![ZooKeeper Setup](./img/zookeeper_setup.png)
+</figure>
 
 ### KRaft
 
@@ -222,10 +219,10 @@ A subset of brokers are designated as controllers, and these controllers provide
     - Other controllers are replica followers.
     - Brokers are replica observers.
 
-<div style="text-align: center;">
-    <img src="./img/kraft_setup.png" alt="KRaft"/>
-</div>
+<figure markdown="span">
+    ![KRaft](./img/kraft_setup.png)
+</figure>
 
-<div style="text-align: center;">
-    <img src="./img/kraft-metadata-mgmt.png" alt="KRaft mode metadata management"/>
-</div>
+<figure markdown="span">
+    ![KRaft mode metadata management](./img/kraft-metadata-mgmt.png)
+</figure>

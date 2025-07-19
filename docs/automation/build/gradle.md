@@ -37,9 +37,9 @@ my-app/
 
 ## [Directories](https://docs.gradle.org/current/userguide/gradle_directories.html)
 
-<div style="text-align: center;">
-    <img src="../img/directories.png" alt="Directory example"/>
-</div>
+<figure markdown="span">
+    ![Directory example](../img/directories.png)
+</figure>
 
 ### Gradle User Home directory
 
@@ -80,9 +80,9 @@ It can be set with the environment variable `GRADLE_USER_HOME`.
 
 ## Build Scripts
 
-<div style="text-align: center;">
-    <img src="../img/build_scripts.png" alt="Build Script example"/>
-</div>
+<figure markdown="span">
+    ![Build Script example](../img/build_scripts.png)
+</figure>
 
 
 ### Defining Variables

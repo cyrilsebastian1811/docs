@@ -8,9 +8,9 @@ ZooKeeper allows distributed processes to coordinate with each other through a s
 
 ZooKeeper is replicated. Like the distributed processes it coordinates, ZooKeeper itself is intended to be replicated over a set of hosts called an  ==ensemble==.
 
-<div style="text-align: center;">
-    <img src="./img/zookeeper-architecture.png" alt="ZooKeeper Architecture"/>
-</div>
+<figure markdown="span">
+    ![ZooKeeper Architecture](./img/zookeeper-architecture.png)
+</figure>
 
 ??? info "Guarantees"
 
@@ -39,9 +39,9 @@ The namespace provided by ZooKeeper is much like that of a standard file system.
 
 Unlike standard file systems, each node in a ZooKeeper namespace can have data associated with it as well as children. It is like having a file-system that allows a file to also be a directory. (ZooKeeper was designed to store coordination data: status information, configuration, location information, etc., so the data stored at each node is usually small, in the byte to kilobyte range.) We use the term ==znode== to make it clear that we are talking about ZooKeeper data nodes.
 
-<div style="text-align: center;">
-    <img src="./img/hierarchical-namespace.png" alt="Hierarchical Namespace"/>
-</div>
+<figure markdown="span">
+    ![Hierarchical Namespace](./img/hierarchical-namespace.png)
+</figure>
 
 
 ??? info "Use cases"

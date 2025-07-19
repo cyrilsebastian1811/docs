@@ -1,9 +1,5 @@
 # __:simple-postgresql: SQL__
 
-## Common Data Types in MySQL & PostgreSQL
-
-This document provides a list of commonly used __data types__ in __MySQL__ and __PostgreSQL__, along with their definitions and examples.
-
 ## What is a DATABASE?
 
 A database is a complete collection of data that includes: Tables, Schemas (in some databases), Views, Indexes, Stored Procedures, Functions, Triggers
@@ -210,13 +206,12 @@ __Normalization Forms (1NF - 3NF)__: Normalization is applied in __stages__, cal
         | A1        | 123 St | NY   |
         | A2        | 456 Ave | LA   |
 
----
 
-__Final Thoughts__:
+!!! info "__Final Thoughts__"
 
-- __1NF:__ Remove duplicates, ensure atomicity.  
-- __2NF:__ Remove partial dependencies (split dependent data into separate tables).  
-- __3NF:__ Remove transitive dependencies (separate unrelated fields). 
+    - __1NF:__ Remove duplicates, ensure atomicity.  
+    - __2NF:__ Remove partial dependencies (split dependent data into separate tables).  
+    - __3NF:__ Remove transitive dependencies (separate unrelated fields). 
 
 ---
 
@@ -335,15 +330,212 @@ Tables
     
     __Use Case:__ Pair __every employee__ with __every department__.
 
+!!! note "__Choosing the Right JOIN__"
+
+    - __INNER JOIN__: Only matching rows
+    - __LEFT JOIN__: All left rows, matched right rows
+    - __RIGHT JOIN__: All right rows, matched left rows
+    - __FULL OUTER JOIN__: All rows from both tables
+    - __CROSS JOIN__: Every combination (Cartesian product)
+
 ---
 
-__Choosing the Right JOIN__:
+## Locks
 
-- __INNER JOIN__: Only matching rows
-- __LEFT JOIN__: All left rows, matched right rows
-- __RIGHT JOIN__: All right rows, matched left rows
-- __FULL OUTER JOIN__: All rows from both tables
-- __CROSS JOIN__: Every combination (Cartesian product)
+- Locks are used to ensure data integrity and transaction isolation during concurrent access.
+- Most modern relational databases automatically acquire and release locks during:
+    - `SELECT`, `INSERT`, `UPDATE`, `DELETE` operations.
+    - When you start and end transactions.
+    - Depending on your isolation level.
+- Types of locks:
+
+    | Lock Type        | Use Case                       | Concurrency | Safety      |
+    | ---------------- | ------------------------------ | ----------- | ----------- |
+    | Row-level        | OLTP systems, high concurrency | High        | High        |
+    | Table-level      | Simple queries, bulk ops       | Low         | Medium      |
+    | Shared Lock      | Read-only operations           | High        | Medium      |
+    | Exclusive Lock   | Updates, deletes               | Low         | High        |
+    | Optimistic Lock  | Web APIs, disconnected apps    | High        | App-managed |
+    | Pessimistic Lock | High-contention systems        | Low         | DB-managed  |
 
 
+---
 
+## Isolation
+
+| id | name | balance |
+| --- | --- | --- |
+| 1 | Alice | 1000 |
+| 2 | Bob | 1000 |
+
+=== "`READ UNCOMMITTED`"
+
+    - Allows dirty reads: you can read uncommitted changes from another transaction.
+    - Very fast, very dangerous.
+
+    ```sql title="Dirty Read"
+    -- Transaction A
+    BEGIN;
+    UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+    -- Not committed yet
+
+    -- Transaction B
+    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+    BEGIN;
+    SELECT * FROM accounts WHERE id = 1;
+    -- Sees balance = 900 (uncommitted!)
+
+    -- Transaction A
+    ROLLBACK;
+    ```
+
+=== "`READ COMMITTED`"
+
+    - Only reads committed data.
+    - Prevents dirty reads.
+    - Allows non-repeatable reads and phantom reads.
+
+    ```sql title="Non-repeatable reads"
+    -- Transaction A
+    BEGIN;
+    UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+    -- Not committed yet
+
+    -- Transaction B
+    SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+    BEGIN;
+    SELECT balance FROM accounts WHERE id = 1;
+    -- Sees 1000, not 900 (dirty read prevented)
+
+    -- Transaction A
+    COMMIT;
+
+    -- Transaction B
+    SELECT balance FROM accounts WHERE id = 1;
+    -- Now sees 900 → non-repeatable read
+    ```
+
+=== "`REPEATABLE READ`"
+
+    - Prevents dirty and non-repeatable reads.
+    - Allows phantom reads (new rows may appear).
+
+    ```sql title="Phantom reads"
+    -- Transaction A
+    SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    BEGIN;
+    SELECT balance FROM accounts WHERE id = 1;
+    -- Sees 1000
+
+    -- Transaction B
+    BEGIN;
+    UPDATE accounts SET balance = 500 WHERE id = 1;
+    COMMIT;
+
+    -- Transaction A
+    SELECT balance FROM accounts WHERE id = 1;
+    -- Still sees 1000 (repeatable read holds)
+
+    -- Transaction B
+    INSERT INTO accounts VALUES (3, 'Charlie', 700);
+
+    -- Transaction A
+    SELECT * FROM accounts WHERE balance > 600;
+    -- Sees Charlie
+    ```
+
+=== "`SERIALIZABLE`"
+
+    - Most strict.
+    - Transactions behave as if they were executed one by one.
+    - Prevents dirty reads, non-repeatable reads, and phantom reads.
+
+    ```sql
+    -- Transaction A
+    SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+    BEGIN;
+    SELECT COUNT(*) FROM accounts WHERE balance > 600;
+    -- Let's say result = 2
+
+    -- Transaction B
+    BEGIN;
+    INSERT INTO accounts VALUES (3, 'Charlie', 700);
+    -- PostgreSQL will block here or fail with serialization error
+    COMMIT;
+
+    -- Transaction A
+    SELECT COUNT(*) FROM accounts WHERE balance > 600;
+    -- Still sees 2 (phantoms prevented)
+    ```
+
+### Read Anomalies
+
+| Problem | Involves | Description |
+| --- | --- | --- |
+| __Dirty Read__ | Read-Read  | A reads uncommitted write from B |
+| __Non-repeatable Read__ | Read-Write | A reads, B updates, A reads again → values differ |
+| __Phantom Read__ | Read-Write | A reads rows matching a condition, B inserts new rows matching that condition before A re-reads |
+
+### Write Anomalies
+
+=== "Dirty Write"
+
+    - Transaction B writes to a row that was modified but not yet committed by A.
+    - Allowed in: `READ UNCOMMITTED`.
+    - PreventED by: `READ COMMITTED` and above.
+
+    ```sql
+    -- T1
+    BEGIN;
+    UPDATE accounts SET balance = 900 WHERE id = 1;
+
+    -- T2 (before T1 commits)
+    BEGIN;
+    UPDATE accounts SET balance = 800 WHERE id = 1;
+    -- ❌ overwrites uncommitted write
+    ```
+
+=== "Lost Update"
+
+    - A and B both read the same value and update it — one update is lost.
+    - Allowed in: `READ COMMITTED`, `REPEATABLE READ`.
+    - Prevented by: `SERIALIZABLE` or Optimistic Locking.
+
+    ```sql
+    -- T1
+    BEGIN;
+    SELECT balance FROM accounts WHERE id = 1; -- sees balance = 1000
+    UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+    COMMIT;
+
+    -- T2 (concurrently)
+    BEGIN;
+    SELECT balance FROM accounts WHERE id = 1; -- also sees balance = 1000
+    UPDATE accounts SET balance = balance - 200 WHERE id = 1;
+    COMMIT;
+    -- ❌ T1's update is lost
+    ```
+
+=== "Write Skew"
+
+    - A and B make writes based on reads, which independently are valid but together violate constraints (common in constraint-sensitive domains like scheduling, accounting, etc.)
+    - Allowed in: `READ COMMITTED`, `REPEATABLE READ`.
+    - Prevented by: `SERIALIZABLE` (or application logic with locking).
+
+    ```sql
+    -- Doctor A and B both on call
+
+    -- T1:
+    BEGIN;
+    SELECT * FROM doctors WHERE on_call = true;
+    -- sees A & B
+    UPDATE doctors SET on_call = false WHERE name = 'A';
+
+    -- T2:
+    BEGIN;
+    SELECT * FROM doctors WHERE on_call = true;
+    -- also sees A & B
+    UPDATE doctors SET on_call = false WHERE name = 'B';
+
+    -- Both commit: ❌ no doctor on call
+    ```

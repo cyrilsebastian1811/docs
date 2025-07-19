@@ -861,7 +861,7 @@ __Types__:
             - Allows Duplicates: You must manually ensure uniqueness (Hibernate does not enforce it).
             - Slower Performance for Large Datasets: Checking for duplicates requires extra queries or processing.
 
-<hr/>
+---
 
 ??? info "`@OnDelete`"
 
