@@ -3,7 +3,7 @@
 ## Memory Architecture
 
 <figure markdown="span">
-    ![JVM Memory Architecture](../img/memory-architecture.png)
+    ![JVM Memory Architecture](./img/memory-architecture.png)
 </figure>
 
 ### Stack

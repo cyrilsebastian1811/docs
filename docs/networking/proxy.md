@@ -1,4 +1,4 @@
-# Proxy Servers
+# __:simple-envoyproxy: Proxy Servers__
 A proxy server is a server that acts as an intermediary for requests from clients seeking resources from other servers. It allows you to go online under a different IP address identity.
 
 

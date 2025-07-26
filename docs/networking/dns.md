@@ -1,39 +1,52 @@
-# Domain Name System (DNS)
+# __:material-dns-outline: DNS__
 
-The Domain Name System (DNS) is a hierarchical and decentralized naming system for computers, services, or other resources connected to the Internet or a private network. It associates various information with domain names assigned to each of the participating entities.
+DNS is a complete infrastructure with ==name servers== at diﬀerent hierarchies. It associates various information with domain names assigned to each of the participating entities.
+
+<figure markdown="span">
+    ![DNS hierarchy](./img/dns-hierarchy.png){ width="600" }
+</figure>
+
 
 ## How DNS Works
 
-Here's a simplified explanation of how DNS works:
+- There are mainly four types of servers in the DNS hierarchy:
+    - __DNS resolver__: Resolvers initiate the querying sequence and forward requests to the other DNS name servers. Typically, lies in user’s network. Also, called local or default servers.
+    - __Root-level name servers__: These servers receive requests from local servers. Root name servers maintain name servers for top-level domain names, such as `.com`, `.edu`, `.us`, and so on.
+    - __Top-level domain (TLD) name servers__: These servers hold the IP addresses of authoritative name servers. Returns a list of IP addresses that belong to the authoritative servers of the organization.
+    - __Authoritative name servers__: These are the organization’s DNS name servers that provide the IP addresses of the web or application servers.
 
-1. When you type a URL into your browser, your browser first needs to find out the IP address of the server hosting that URL.
-2. To do this, it sends a query to a DNS server.
-3. The DNS server looks up the domain name in its records and returns the corresponding IP address.
-4. Your browser then sends a request to that IP address to retrieve the webpage.
+- There are two ways to perform a DNS query:
+    1. __Iterative__: The local server requests the root, TLD, and the authoritative servers for the IP address.
+    2. __Recursive__: The end user requests the local server. The local server further requests the root DNS name servers. The root name servers forward the requests to other name servers.
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Browser
-    participant DNS Server
-    participant Web Server
-    User->>Browser: Enter URL
-    Browser->>DNS Server: Query domain's IP
-    DNS Server-->>Browser: Return IP address
-    Browser->>Web Server: Request webpage
-    Web Server-->>Browser: Send webpage
-    Browser-->>User: Display webpage
-```
+<figure markdown="span">
+    ![Query resolution mechanisms](./img/query-resolution.png){ width="600" }
+</figure>
+
+### TTL
+
+- DNS compromises on strong consistency to achieve high performance because data is read frequently from DNS databases as compared to writing.
+- However, DNS provides eventual consistency and updates records on replicated servers lazily.
+- Consistency can suﬀer because of caching.
+- To mitigate this issue, each cached record comes with an expiration time called time-to-live (TTL).
 
 ## DNS Records
+
 DNS uses several types of records to perform its functions:
 
-- **A Records**: These records map domain names to IP addresses.
-- **CNAME Records**: These records map one domain name to another.
-- **MX Records**: These records specify the mail servers used for a domain.
-- **NS Records**: These records specify the authoritative DNS servers for a domain.
-- **PTR Records**: These records provide the reverse mapping from IP addresses to domain names.
-- **SOA Records**: These records provide information about a DNS zone, such as the primary name server and the email of the domain administrator.
+| Record | Purpose | Example |
+| --- | --- | --- |
+| __A__ | Maps domain to __IPv4 address__ | `example.com → 93.184.216.34` |
+| __AAAA__ | Maps domain to __IPv6 address__ | `example.com → 2606:2800:220:1:248:1893:25c8:1946` |
+| __CNAME__ | Alias: points one domain to another domain | `www.example.com → example.com` |
+| __MX__ | Mail exchange server for a domain | `example.com → mail.example.com (priority 10)` |
+| __TXT__ | Arbitrary text data (used for SPF, DKIM, verification) | `v=spf1 include:_spf.google.com ~all` |
+| __NS__ | Lists authoritative __name servers__ for the domain | `example.com → ns1.provider.com` |
+| __PTR__ | Reverse DNS: maps IP address → domain (used for validation) | `93.184.216.34 → example.com` |
+| __SOA__ | Start of Authority: DNS zone settings | Contains admin email, serial, refresh times |
+| __SRV__ | Used for locating services (e.g., SIP, XMPP) | `_sip._tcp.example.com → sipserver.example.com` |
+| __CAA__ | Specifies which CAs can issue SSL certs | `example.com → 0 issue "letsencrypt.org"` |
+
 
 
 ## DNS in Kubernetes

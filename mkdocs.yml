@@ -3,24 +3,12 @@ site_url: https://example.com/ # Change this to your site URL
 dev_addr: 'localhost:8000'
 nav:
   - git/index.md
-  - OS:
-    - os/linux.md
-    - os/disk.md
-  - Networking:
-    - networking/index.md
-    - DNS: networking/dns.md
-    # - LoadBalancer: networking/loadbalancer.md
-    - Proxy: networking/proxy.md
-
   - Languages:
     - OOP: languages/oop.md
     - java:
       - languages/java/jvm.md
       - languages/java/index.md
       - languages/java/threads.md
-
-  - "Build Automation":
-    - automation/build/gradle.md
 
   - Backend:
     - Database:
@@ -48,8 +36,23 @@ nav:
     - security/certs.md
     - security/crypto.md
 
+  - "Build Automation":
+    - automation/build/gradle.md
+
   - Artifactory: artifactory/index.md
   - LDAP: ldap/index.md
+
+  - OS:
+    - os/linux.md
+    - os/disk.md
+  - Networking:
+    - networking/index.md
+    - networking/dns.md
+    # - LoadBalancer: networking/loadbalancer.md
+    - networking/proxy.md
+
+  - Distributed Systems:
+    - distributed_systems/index.md
 
   - ZooKeeper: zookeeper/index.md
   - Kafka:
@@ -110,6 +113,12 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
 
 plugins:
   - include-markdown
@@ -151,7 +160,7 @@ theme:
   features:
     - navigation.sections
     - navigation.top
-    # - navigation.instant
+    - navigation.instant
     # - navigation.tabs
     # - navigation.tabs.sticky
     - navigation.expand
