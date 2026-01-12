@@ -12,8 +12,11 @@ Material for MkDocs
 - Prerequisite:
     - Python environment
     - `pip install mkdocs`
-- Create a new project: `mkdocs new [dir-name]`
-- Live-serve application: `mkdocs serve --config-file mkdocs.yml`: 
+- Create a new project:
+    ```bash
+    mkdocs new [dir-name]
+    ```
+- Serve application: 
     ```bash
     # Ports configured in mkdocs.yml
     mkdocs serve --config-file mkdocs.yml
@@ -21,8 +24,29 @@ Material for MkDocs
     # Ports configured with CLI options
     mkdocs serve -a 0.0.0.0:8000 --config-file mkdocs.yml
     ```
-- Build: `mkdocs build --site-dir site`
+- Build application:
+    ```bash
+    mkdocs build --site-dir site
+    ```
+- Documentation can be deployed to [GitHub Pages](https://www.mkdocs.org/user-guide/deploying-your-docs/). There are two basic types of GitHub Pages sites:
+    - [Project Pages sites](https://www.mkdocs.org/user-guide/deploying-your-docs/#project-pages)
+        ```bash
+        cd my-project/
+        mkdocs gh-deploy
+        ```
+    - [User and Organization Pages sites](https://www.mkdocs.org/user-guide/deploying-your-docs/#organization-and-user-pages)
+        ```rust
+        my-project/
+            mkdocs.yml
+            docs/
+        my-orgname.github.io/
+        ```
+        ```bash
+        cd ../my-orgname.github.io/
+        mkdocs gh-deploy --config-file ../my-project/mkdocs.yml --remote-branch master
+        ```
 - Help: `mkdocs -h`
+
 
 ## Project layout
 
@@ -32,6 +56,7 @@ docs/
     index.md  # The documentation homepage.
     ...       # Other markdown pages, images and other files.
 ```
+
 
 ## Adding Pages
 
@@ -47,6 +72,7 @@ docs/
             - os/linux.md
             - os/disk.md
     ```
+
 
 ## MkDocs Features
 
