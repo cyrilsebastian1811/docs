@@ -648,8 +648,8 @@ Eplicit binding
     }
     const person = { name: "Ron" };
 
-    const greetCyril = greet.bind(person);
-    greetCyril("Hey", "!");                 // Hello, Ron!
+    const greetPerson = greet.bind(person);
+    greetPerson("Hey", "!");                 // Hello, Ron!
     ```
 
 
