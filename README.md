@@ -33,6 +33,9 @@ Material for MkDocs
         ```bash
         cd my-project/
         mkdocs gh-deploy
+
+        # Commit changes to master and force deploy
+        mkdocs gh-deploy --force
         ```
     - [User and Organization Pages sites](https://www.mkdocs.org/user-guide/deploying-your-docs/#organization-and-user-pages)
         ```rust
