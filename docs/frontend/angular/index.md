@@ -213,6 +213,7 @@ export class AppComponent {
 
 === "Sibling-to-Sibling"
 
+    <!-- To be filled -->
     Fill stuff here
 
 ### Lifecycles
@@ -343,8 +344,8 @@ export class LifecycleDemoComponent implements OnInit, OnChanges, DoCheck, After
 ## Directives
 
 - 2 types:
-  - Structural: Change DOM structure. e.g `*ngIf`, `*ngFor`, `*ngSwitchCase`, custom ones
-  - Attribute: Change appearance or behavior of elements. e.g `ngStyle`, `ngClass`, custom ones
+    1. Structural: Change DOM structure. e.g `*ngIf`, `*ngFor`, `*ngSwitchCase`, custom ones
+    2. Attribute: Change appearance or behavior of elements. e.g `ngStyle`, `ngClass`, custom ones
 
 === "Structural"
 
@@ -371,7 +372,7 @@ export class LifecycleDemoComponent implements OnInit, OnChanges, DoCheck, After
         </ul>
         ```
 
-    === "`*ngSwitch`"
+    === "`[ngSwitch]`"
 
         ``` html
         <div [ngSwitch]="status">
@@ -930,7 +931,7 @@ Angular provides two powerful approaches to building forms:
     | Pipe | Example | Output |
     | --- | --- | --- |
     | `date` | `{{ today | date:'shortDate' }}` | `7/8/25` (format varies) |
-    | `uppercase` | `{{ 'cyril' | uppercase }}` | `RON` |
+    | `uppercase` | `{{ 'ron' | uppercase }}` | `RON` |
     | `lowercase` | `{{ 'ANGULAR' | lowercase }}` | `angular` |
     | `titlecase` | `{{ 'hello world' | titlecase }}` | `Hello World` |
     | `json` | `{{ object | json }}` | Pretty-printed JSON string |

@@ -1252,16 +1252,17 @@ const Toolbar = () => {
 
 === "`react-redux` Implementation"
 
-    ```jsx title="reducers/counterReducer.js"
+    ```jsx title="reducers/counterReducer.js" hl_lines="4 6 10"
     //                     (initialState, action)
     const counterReducer = (state = { counter: 0, showCounter: true }, action) => {
       switch (action.type) {
         // Return a cloned verions of the state
         case "INCREASE": return {
-          counter: (state.counter + action.amt), showCounter
+          ...state
+          counter: (state.counter + action.amt),
         }
         case "TOGGLE": return {
-          counter: state.counter,
+          ...state
           showCounter: !state.showCounter
         }
       }
@@ -1337,7 +1338,7 @@ const Toolbar = () => {
 
     - Another library that address the above mentioned short comings of `react-redux`
 
-    ```jsx title="counterSlice.js" hl_lines="8-9"
+    ```jsx title="counterSlice.js" hl_lines="8-10"
     import { createSlice, configureStore } from '@reduxjs/toolkit';
 
     const counterSlice = createSlice({
@@ -1345,8 +1346,9 @@ const Toolbar = () => {
       initialState: { counter: 0, showCounter: true },
       reducers: {
         increase(state, action) {
-          // redux/toolkit comes with Immer. which intercepts this
-          // and clones the state for us
+          // redux/toolkit comes with Immer
+          // Which intercepts this and clones the state for us
+          // No need to clone state { ..state }
           state.counter = state.counter + action.payload;
         },
         toggle(state) {
