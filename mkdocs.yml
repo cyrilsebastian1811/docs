@@ -45,6 +45,9 @@ nav:
   - "Build Automation":
     - automation/build/gradle.md
 
+  - "IaC":
+    - automation/IaC/terraform.md
+
   - Artifactory: artifactory/index.md
   - LDAP: ldap/index.md
 

@@ -41,6 +41,9 @@ This serves as a quick reference to various topics in software engineering.
 ### Build Automation
 - [Gradle](automation/build/gradle.md)
 
+### Infrastructure as Code
+- [Terraform](automation/IaC/terraform.md)
+
 ### Artifactory
 - [Artifactory](artifactory/index.md)
 
