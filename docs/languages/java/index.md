@@ -1,5 +1,54 @@
 # __:material-language-java: Java__
 
+## Type Casting
+
+Conversion of one data type to another data type implicitly or explicitly. Just like the data types, the objects can also be typecasted. However, in objects, there are only two types of objects, i.e. parent object and child object. Therefore, typecasting of objects basically means that one type of object (i.e.) child or parent to another. There are two types of typecasting.
+
+
+```java
+class Animal {
+    void sound() { /* ... */ }
+}
+
+class Dog extends Animal {
+    @Override
+    void sound() { /* ... */ }
+
+    void fetch() { /* ... */ }
+}
+```
+
+### Upcasting
+
+- Direction: Subclass to Superclass (up the inheritance tree)
+- Conversion: Automatic/Implicit
+- Safety: Always safe
+- Accessibility: Superclass methods/fields accessible (overridden methods use subclass logic)
+- Purpose: Achieves polymorphism, writing flexible code.
+
+```java
+Animal myAnimal = new Dog();
+myAnimal.sound()    // Executes sound logic in Dog class
+myAnimal.fetch()    // Fails cannot access subclass-specific methods
+```
+
+### Downcasting
+
+- Direction: Superclass to Subclass (down the inheritance tree)
+- Conversion: Explicit (requires a cast operator)
+- Safety: Potentially unsafe, can cause ClassCastException
+- Accessibility: Superclass and subclass methods/fields accessible
+- Purpose: Recovers access to subclass-specific elements hidden by upcasting
+
+```java
+// Upcasting
+Animal myAnimal = new Dog();
+Dog myDog = (Dog) myAnimal;
+myDog.sound()    // Executes sound logic in Dog class
+myDog.fetch()    // Executes fetch logic in Dog class
+```
+
+
 ## Generics
 
 - Generics in Java allow you to write code that works with different types.
