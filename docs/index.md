@@ -15,6 +15,7 @@ This serves as a quick reference to various topics in software engineering.
 - [Java](languages/java/index.md)
   - [JVM](languages/java/jvm.md)
   - [Threads](languages/java/threads.md)
+- [Python](languages/python/index.md)
 
 ### Backend
 - [Databases](backend/databases/sql.md)

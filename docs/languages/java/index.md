@@ -18,41 +18,31 @@ class Dog extends Animal {
 }
 ```
 
-### Upcasting
+| Aspect         | Upcasting                                                                 | Downcasting                                                                 |
+|---------------|--------------------------------------------------------------------------|----------------------------------------------------------------------------|
+| Direction     | Subclass to Superclass (up the inheritance tree)                        | Superclass to Subclass (down the inheritance tree)                        |
+| Conversion    | Automatic / Implicit                                                     | Explicit (requires a cast operator)                                        |
+| Safety        | Always safe                                                              | Potentially unsafe, can cause ClassCastException                           |
+| Accessibility | Superclass methods/fields accessible (overridden methods use subclass logic) | Superclass and subclass methods/fields accessible                          |
+| Purpose       | Achieves polymorphism, writing flexible code                             | Recovers access to subclass-specific elements hidden by upcasting          |
 
-- Direction: Subclass to Superclass (up the inheritance tree)
-- Conversion: Automatic/Implicit
-- Safety: Always safe
-- Accessibility: Superclass methods/fields accessible (overridden methods use subclass logic)
-- Purpose: Achieves polymorphism, writing flexible code.
 
-```java
+```java title="example"
 Animal myAnimal = new Dog();
 myAnimal.sound()    // Executes sound logic in Dog class
 myAnimal.fetch()    // Fails cannot access subclass-specific methods
-```
-
-### Downcasting
-
-- Direction: Superclass to Subclass (down the inheritance tree)
-- Conversion: Explicit (requires a cast operator)
-- Safety: Potentially unsafe, can cause ClassCastException
-- Accessibility: Superclass and subclass methods/fields accessible
-- Purpose: Recovers access to subclass-specific elements hidden by upcasting
-
-```java
-// Upcasting
-Animal myAnimal = new Dog();
+ 
 Dog myDog = (Dog) myAnimal;
 myDog.sound()    // Executes sound logic in Dog class
 myDog.fetch()    // Executes fetch logic in Dog class
 ```
 
+---
 
 ## Generics
 
 - Generics in Java allow you to write code that works with different types.
-- Why use:
+- Offers:
     - Type Safety: Catch errors at compile time.
     - Code Reuse: Write logic once for many types.
     - Eliminate Casting: No need for explicit type casts.
@@ -68,7 +58,9 @@ class Box<T> {
     public T get() { return value; }
 }
 
-Box<String> stringBox = new Box<>();
+Box<String> box = new Box<>();
+box.set("hello");   // ✅
+box.set(123);       // ❌ - T ensures consistency
 
 class Calculator {
     // Generic Method
@@ -81,40 +73,78 @@ class Calculator {
 
 | Feature                     | Generic Class                                                 | Generic Method                                |
 | --------------------------- | ------------------------------------------------------------- | --------------------------------------------- |
-| Definition Scope        | Type parameter is defined at the class level                  | Type parameter is defined at the method level |
-| Reusability             | All methods in the class can use the same type                | Only that method uses the generic type        |
-| When to Use             | When the same type is used across multiple methods            | When only one method needs to be generic      |
-| Syntax                  | `class Box<T> { ... }`                                        | `<T> T identity(T value) { ... }`             |
-| Type parameter lifetime | Exists for the life of the object                             | Exists only during the method call            |
-| Can be static?          | Can't be used in static methods | Can be used in static methods            |
+| Definition Scope            | Type parameter is defined at the class level                  | Type parameter is defined at the method level |
+| Reusability                 | All methods in the class can use the same type                | Only that method uses the generic type        |
+| When to Use                 | When the same type is used across multiple methods            | When only one method needs to be generic      |
+| Syntax                      | `class Box<T> { ... }`                                        | `<T> T identity(T value) { ... }`             |
+| Type parameter lifetime     | Exists for the life of the object                             | Exists only during the method call            |
+| Can be static?              | Can't be used in static methods                               | Can be used in static methods                 |
 
 
 ### Wildcards Generics
 
 - Wildcards allow more flexible method parameters
+- Use:
+    - You only need to read
+    - You don't care about the exact type
 
-=== "Unbounded Wildcard: `<?>`"
+```java
+List<?> list = List.of("a", "b");
+
+list.add("new");   // ❌ - ? means: “I don’t know the type.”
+list.add(null);    // ✅
+```
+
+=== "Invariance/Unbounded: `<?>`"
 
     ```java
-    List<?> anything = List.of("abc", 123, true);
+    List<Integer> ints = new ArrayList<>();
+    List<Integer> other = ints;                 // ❌ Compile error
+    // if this were allowed
+    nums.add(3.14);   // Now ints would contain a Double. That breaks type safety.
     ```
 
-=== "Upper Bounded Wildcard: `<? extends T>`"
+=== "Covariance/Upper Bounded: `<? extends T>`"
+
+    A list of some unknown type that is a subtype of T.
 
     ```java
     // Accepts List<Integer>, List<Double>, etc.
-    public void printAll(List<? extends Number> numbers) { ... }
+    public void printAll(List<? extends Number> list) {
+        list.add(3);                // ❌ - java dosen't know if list is number, double, etc
+        list.add(null);             // ✅ - Works because all types can be null
+
+        Number n = list.get(0);     // Read-safe
+    }
     ```
 
-=== "Lower Bounded Wildcard: `<? super T>`"
+=== "Contravariant/Lower bound: `<? super T>`"
+
+    A list of some unknown type that is a supertype of T.
 
     ```java
     // Accepts List<Integer>, List<Number>, List<Object>
     public void addTo(List<? super Integer> list) {
-        list.add(42);
+        Number n = list.get(0);     // ❌ - java dosen't know if list is number or object
+        Object o = list.get(0);     // ✅ - Works because all classes are a subclass of object
+
+        list.add(42);               // Write-safe
     }
     ```
 
+??? warning "PECS Rule"
+
+    PECS = Producer Extends, Consumer Super
+
+    ```java
+    // dest Valid types: List<Integer>, List<Number>, List<Object>
+    // src Valid types: List<Integer>, List<Float>, List<Double>
+    public void copy(List<? super Integer> dest, List<? extends Number> src) {
+        for(Number n: src) {
+            dest.add(n.intValue());
+        }
+    }
+    ```
 
 ## Lambda Expressions
 
@@ -303,7 +333,7 @@ interface Vehicle {
 
 ## Method references
 
-- A shorthand for calling a method using :: operator.
+- A shorthand for calling a method using `::` operator.
 - It’s a method reference, which is a shorthand for a lambda expression that calls a method.
 - e.g. `String::toUpperCase` is equivalent to `(str) -> str.toUpperCase()`
 - `String::toUpperCase` tells the compiler. For each element in the stream (a String), call `toUpperCase()` on it.

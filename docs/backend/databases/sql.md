@@ -114,62 +114,86 @@ CREATE TABLE employees (
 
 ## Database Normalization
 
-Database normalization is the process of __structuring a relational database__ to reduce __redundancy__ and improve __data integrity__.
+Database normalization is the process of structuring a relational database to __minimize redundancy__,  __enhance data integrity__, and __improve database efficiency__.
 
-__Need for it__:
+### Why it's required?
 
-- Avoid data duplication
-- Ensure consistency
-- Make updates easier
-- Improve query efficiency
+<figure markdown="span">
+    ![Before Normalization](./img/before_normalization.jpeg){ width="600" }
+    <figcaption>Before Normalization</figcaption>
+</figure>
 
-__Normalization Forms (1NF - 3NF)__: Normalization is applied in __stages__, called __normal forms (NF)__.
+??? warning 
+
+    - __Insertion Anomaly__: If a new department is created but no employee is assigned to it yet, we cannot store its location because we need an employee record to insert
+    - __Update Anomaly__: If the location of the HR department changes, we must update it in multiple rows (for both Nick Wise and Lily Case). If one row is missed, the data becomes inconsistent.
+    - __Deletion Anomaly__: If all employees in the IT department leave, we lose the department information, including its location.
+
+- __Consistency and Accuracy__: Without normalization, the same data may be stored in multiple places, leading to inconsistencies and errors. Normalization ensures that updates to data are reflected everywhere, maintaining accuracy is one of the primary benefits of database normalization.
+- __Efficient Data Management__: Normalized databases are easier to maintain and modify. Changes to the database structure or data can be made with minimal risk of introducing errors.
+- __Scalability__: As databases grow, normalized structures make it easier to scale and adapt to new requirements without major redesigns.
+- __Data Integrity Enforcement__: By defining clear relationships and constraints, normalization helps enforce business rules and data integrity automatically.
+- __Reduced Storage Costs__: Eliminating redundant data reduces the amount of storage required, which can be significant in large databases.
+
+
+### Features of Normalization
+
+- __Atomicity__: Data is broken down into the smallest meaningful units, ensuring that each field contains only one value (no repeating groups or arrays).
+- __Logical Table Structure__: Data is organized into logical tables based on relationships and dependencies, making the database easier to understand and manage.
+- __Use of Keys__: Primary keys, foreign keys, and candidate keys are used to uniquely identify records and establish relationships between tables.
+- __Hierarchical Normal Forms__: The process follows a hierarchy of normal forms (__1NF__, __2NF__, __3NF__, __BCNF__, etc.), each with stricter requirements to further reduce redundancy and dependency.
+- __Referential Integrity__: Relationships between tables are maintained through foreign key constraints, ensuring that related data remains consistent.
+- __Flexibility and Extensibility__: Normalized databases can be easily extended or modified to accommodate new data types or relationships without major restructuring.
+
+<!-- __Normalization Forms (1NF - 3NF)__: Normalization is applied in __stages__, called __normal forms (NF)__. -->
 
 === "__1NF: First Normal Form__"
 
-    __Rule:__ No repeating groups. i.e. each field contains only atomic values(single values per field).  
+    __Requirements:__
+
+    - All columns contain atomic values (no lists, sets, or composite fields).
+    - No repeating groups. i.e. each field contains only atomic values(single values per field).
+    - Each column contains values of a single data type.
 
     === "Example (Before 1NF)"
-        | Order_ID | Customer_Name | Products       |
-        |----------|--------------|---------------|
-        | 1        | John Doe      | Laptop, Mouse |
-        | 2        | Jane Smith    | Phone         |
+        | Customer_ID | Customer_Name | Products      |
+        |-------------|---------------|---------------|
+        | 1           | John Doe      | Laptop, Mouse |
+        | 2           | Jane Smith    | Phone         |
         
     === "Example (After 1NF)"
 
-        | Order_ID | Customer_Name | Product  |
-        |----------|--------------|---------|
-        | 1        | John Doe      | Laptop  |
-        | 1        | John Doe      | Mouse   |
-        | 2        | Jane Smith    | Phone   |
+        | Customer_ID | Customer_Name | Product |
+        |-------------|---------------|---------|
+        | 1           | John Doe      | Laptop  |
+        | 1           | John Doe      | Mouse   |
+        | 2           | Jane Smith    | Phone   |
 
 === "__2NF: Second Normal Form__"
 
-    __Rule:__ Eliminate partial dependencies (__every column must depend on the whole primary key__).
+    __Requirements:__
+
+    - Every non-primary key attribute is fully functionally dependent on the entire primary key.
+    - Eliminate partial dependencies: __every column must depend on the whole primary key and not part of a composite key.__.
 
     === "Example (Before 2NF)"
 
-        | Order_ID | Product  | Customer_Name | Customer_Address |
-        |----------|---------|--------------|----------------|
-        | 1        | Laptop  | John Doe      | NY, USA       |
-        | 1        | Mouse   | John Doe      | NY, USA       |
-        | 2        | Phone   | Jane Smith    | LA, USA       |
+        `Customer_Name` depends only on `Customer_ID`, not the full primary key (`Order_ID`, `Customer_ID`). This is a partial dependency.
+
+        | Order_ID | Customer_ID | Customer_Name | Product  |
+        |----------|-------------|---------------|----------|
+        | 1        | 101         | John Doe      | Laptop   |
+        | 2        | 101         | John Doe      | Mouse    |
+        | 3        | 102         | Jane Smith    | Phone    |
 
     === "Example (After 2NF)"
 
-        __Orders Table__
-
-        <!-- | Order_ID | Customer_ID |
-        |----------|------------|
-        | 1        | 101        |
-        | 2        | 102        | -->
-
         __Customers Table__
 
-        | Customer_ID | Customer_Name | Customer_Address |
-        |------------|--------------|----------------|
-        | 101        | John Doe      | NY, USA       |
-        | 102        | Jane Smith    | LA, USA       |
+        | Customer_ID | Customer_Name |
+        |-------------|---------------|
+        | 101         | John Doe      |
+        | 102         | Jane Smith    |
 
         __Orders Table__
 
@@ -181,30 +205,45 @@ __Normalization Forms (1NF - 3NF)__: Normalization is applied in __stages__, cal
 
 === "__3NF: Third Normal Form__"
 
-    __Rule:__ Remove __transitive dependencies__ (columns should only depend on the primary key, not on other non-key attributes).
+    __Requirements:__ 
+    
+    - Remove __transitive dependencies__ (columns should only depend on the primary key, not on other non-key attributes).
 
     === "Example (Before 3NF)"
-        
-        | Customer_ID | Customer_Name | Address  | City  |
-        |------------|--------------|---------|------|
-        | 101        | John Doe      | 123 St  | NY   |
-        | 102        | Jane Smith    | 456 Ave | LA   |
+
+        `Supplier` depends on `Product`, not directly on the primary key.
+
+        | Order_ID | Customer_ID | Product  | Supplier |
+        |----------|-------------|----------|----------|
+        | 1        | 101         | Laptop   | HP       |
+        | 2        | 101         | Mouse    | Logitech |
+        | 3        | 102         | Phone    | Apple    |
 
     === "Example (After 3NF)"
 
-        __Customers Table__
+        __Orders Table__
 
-        | Customer_ID | Customer_Name | Address_ID |
-        |------------|--------------|-----------|
-        | 101        | John Doe      | A1        |
-        | 102        | Jane Smith    | A2        |
+        | Order_ID | Customer_ID | Product_ID |
+        |----------|-------------|------------|
+        | 1        | 101         | 301        |
+        | 2        | 101         | 302        |
+        | 3        | 102         | 303        |
 
-        __Addresses Table__
+        __Products Table__
 
-        | Address_ID | Street  | City  |
-        |-----------|--------|------|
-        | A1        | 123 St | NY   |
-        | A2        | 456 Ave | LA   |
+        | Product_ID | Product_Name  | Supplier_ID |
+        |------------|---------------|-------------|
+        | 301        | Laptop        | 401         |
+        | 302        | Mouse         | 402         |
+        | 303        | Phone         | 403         |
+
+        __Suppliers Table__
+
+        | Supplier_ID | Supplier_Name |
+        |-------------|---------------|
+        | 401         | HP            |
+        | 402         | Logitech      |
+        | 403         | Apple         |
 
 
 !!! info "__Final Thoughts__"
@@ -221,15 +260,17 @@ In SQL, `JOIN` is used to combine rows from two or more tables based on a relate
 
 Tables
 
-| id | name  | dept_id |
-|----|-------|---------|
-| 1  | Alice | 10      |
-| 2  | Bob   | 20      |
+| id | name    | dept_id |
+|----|---------|---------|
+| 1  | Alice   | 10      |
+| 2  | Bob     | 20      |
+| 3  | Charlie | 40      |
 
 | id  | dept_name |
 |-----|----------|
 | 10  | HR       |
 | 20  | IT       |
+| 30  | Finance  |
 
 
 === "INNER JOIN"
